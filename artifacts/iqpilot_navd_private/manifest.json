@@ -1,0 +1,74 @@
+{
+  "python/iqpilot_private/__init__.py": {
+    "mode": 420,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "size": 0
+  },
+  "python/iqpilot_private/navd/__init__.cpython-312-aarch64-linux-gnu.so": {
+    "mode": 493,
+    "sha256": "34810299261e99e494e1a416e551987720de198e67a45992b3e69067d05e1f68",
+    "size": 67616
+  },
+  "python/iqpilot_private/navd/__init__.py": {
+    "mode": 420,
+    "sha256": "3faeaa3363b2f50fa135ad4c1f2466853d684d562120425f77a58039837fd8fb",
+    "size": 69
+  },
+  "python/iqpilot_private/navd/event_builder.cpython-312-aarch64-linux-gnu.so": {
+    "mode": 493,
+    "sha256": "a1dd87dc06c6ee38701a6c9424a1f9559e01139d1a0ee26d1836e4a4a1a30117",
+    "size": 136856
+  },
+  "python/iqpilot_private/navd/gps_lane_tracker.cpython-312-aarch64-linux-gnu.so": {
+    "mode": 493,
+    "sha256": "0e269ee062ba5b35eee577fad87d6dec2d0487d2562e40dff6c31b8a72c7841a",
+    "size": 135704
+  },
+  "python/iqpilot_private/navd/helpers.cpython-312-aarch64-linux-gnu.so": {
+    "mode": 493,
+    "sha256": "a176cec3f0bb47ff04f9e30a6185630f68ef141a178a4a0989267e67251e0a02",
+    "size": 136056
+  },
+  "python/iqpilot_private/navd/iqmapd.cpython-312-aarch64-linux-gnu.so": {
+    "mode": 493,
+    "sha256": "7ef2d512ba0dcbd08f9bd8650e177a3cb8d8631d4f42162b0ecd80ed1192b64c",
+    "size": 135416
+  },
+  "python/iqpilot_private/navd/navd.cpython-312-aarch64-linux-gnu.so": {
+    "mode": 493,
+    "sha256": "46011ce276846f7936e8067cff9dfb6f04f94b1da99e8cc2e259fc33873aa600",
+    "size": 664176
+  },
+  "python/iqpilot_private/navd/navrenderd.cpython-312-aarch64-linux-gnu.so": {
+    "mode": 493,
+    "sha256": "45ea7ff800bd742ebf0ac3c2fcb908ae5623836cfae913f1955836dab131e32d",
+    "size": 135464
+  },
+  "python/iqpilot_private/navd/route_manager.cpython-312-aarch64-linux-gnu.so": {
+    "mode": 493,
+    "sha256": "90ec0e655c7bc696e26b7e67abac1accc2d2ac920d6bdc625969b3f75cd60914",
+    "size": 599904
+  },
+  "python/iqpilot_private/navd/runtime_common.cpython-312-aarch64-linux-gnu.so": {
+    "mode": 493,
+    "sha256": "d04c9b911599d4956b1b112c3c253c245b558f6771701bee87960a98dce9062a",
+    "size": 134096
+  },
+  "python/iqpilot_private/navd/web_server.cpython-312-aarch64-linux-gnu.so": {
+    "mode": 493,
+    "sha256": "26633ce82a0b74c1484610ed27cfa93fb596ed171bd2c61dc5e9295c3a60c4ca",
+    "size": 201304
+  },
+  "signatures": {
+    "python/iqpilot_private/navd/__init__.cpython-312-aarch64-linux-gnu.so": "Xddbnb7wReSRuxvxuh0XHm1tPxwUAsxClUGhMP/jeMd4J1UCfW6Zkgw7fqVARslNpGyk/AF0IGlnIzP5aoU7Cg==",
+    "python/iqpilot_private/navd/event_builder.cpython-312-aarch64-linux-gnu.so": "FHnPoHhPRMHaup+tz/hny2hGAI0NywWSONf+xzLlMnLoJ846SuUCTaXXqyF9ICyWawZh5yxqqc+4DujIisyRCg==",
+    "python/iqpilot_private/navd/gps_lane_tracker.cpython-312-aarch64-linux-gnu.so": "ImNa/p2tieWLxUqbrnVBg8n2xipuhVdii9uHWTeWfBvl49QtRj57fuIwql7L8kCDy+bUk587Y8MbO26y2ZUEBA==",
+    "python/iqpilot_private/navd/helpers.cpython-312-aarch64-linux-gnu.so": "Vu/NpLKKWefErg30h5RFJtT+2zHSXuZLQzzoOAMrjzJZPJgDpGRVm2lvnzpbyNsm7zcX1xPJOXVXwqe76yZGDw==",
+    "python/iqpilot_private/navd/iqmapd.cpython-312-aarch64-linux-gnu.so": "DvQabuU/keJhMFj5PlDv/FuPL5q0HG0y9yjSjKYneUdf7DPE8o3oVOwdYUw9S+/vQYnk9WAoBacbDe5ip1aUAQ==",
+    "python/iqpilot_private/navd/navd.cpython-312-aarch64-linux-gnu.so": "HgVb95tTpFPai+cq2h0Uz5wMmyPAfLwP5nOKfUuiUq8slHaFObOMo/T22Jqj7u/ri0w82mL0CDmuTHhp6hPUDA==",
+    "python/iqpilot_private/navd/navrenderd.cpython-312-aarch64-linux-gnu.so": "Kqd/kXDwwHtabW5NtcxQZqnpq7VEcsjlXXZeMvfFp0vPw1+cI+wSqqRRZDFvxIsjn9xzevSY0uR18JCEExDUCQ==",
+    "python/iqpilot_private/navd/route_manager.cpython-312-aarch64-linux-gnu.so": "VAuMXxCtm2R6qXj2CC38+hytKmMurlCUmP3JS3qCwr5fpeMKTQVndFlzfPIce8whekqYUwko/B4hKbewC5JVBA==",
+    "python/iqpilot_private/navd/runtime_common.cpython-312-aarch64-linux-gnu.so": "q+k+rhPNgrjxQjkaO4oPKhhhLkP3bC9DdyMJX6VbIclvdE+sH2H8TUkGKy4jEsVUX+34PaWOfLgdeOgMGgxeDw==",
+    "python/iqpilot_private/navd/web_server.cpython-312-aarch64-linux-gnu.so": "OmGsnaytNHPCUyO2/i9WRCc4oFcL3VCrLan9+Tv0jlQKyqb6HWs+uSm4CTTLbqgVZSlnEn+7Sk1fgHpVPxPoCg=="
+  }
+}
