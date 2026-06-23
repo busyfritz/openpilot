@@ -1,0 +1,60 @@
+{
+  "python/iqpilot_private/__init__.py": {
+    "mode": 420,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "size": 0
+  },
+  "python/iqpilot_private/konn3kt/__init__.py": {
+    "mode": 420,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "size": 0
+  },
+  "python/iqpilot_private/konn3kt/hephaestus/__init__.py": {
+    "mode": 420,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "size": 0
+  },
+  "python/iqpilot_private/konn3kt/hephaestus/_vendor/localapi_runtime.zip": {
+    "mode": 420,
+    "sha256": "fc19be09a9428762f515daf223bfa776c0915dd10ba313a5fe346b67bed5938d",
+    "size": 2100238
+  },
+  "python/iqpilot_private/konn3kt/hephaestus/ble_auth.cpython-312-aarch64-linux-gnu.so": {
+    "mode": 493,
+    "sha256": "93ee7edb5b4913fa553d341b7ac5ab363add16f164367d3c32111c03edee3356",
+    "size": 267856
+  },
+  "python/iqpilot_private/konn3kt/hephaestus/ble_gatt.cpython-312-aarch64-linux-gnu.so": {
+    "mode": 493,
+    "sha256": "b26fef89b9d1496d402d3b3b426d3e3c9613bdd5c270dc10f326973b9735a4f1",
+    "size": 339856
+  },
+  "python/iqpilot_private/konn3kt/hephaestus/ble_rpc_dispatch.cpython-312-aarch64-linux-gnu.so": {
+    "mode": 493,
+    "sha256": "14ed1e8e576ceb2d1590b2d683cb308a4d1ba05777aafb915af6f12c153da965",
+    "size": 68048
+  },
+  "python/iqpilot_private/konn3kt/hephaestus/ble_transportd.cpython-312-aarch64-linux-gnu.so": {
+    "mode": 493,
+    "sha256": "0b884d9c91f8b6b061e0fd9630721e31c83de10d79200ead190d8fa6a6e7c320",
+    "size": 334528
+  },
+  "python/iqpilot_private/konn3kt/hephaestus/hephaestusd.cpython-312-aarch64-linux-gnu.so": {
+    "mode": 493,
+    "sha256": "7f896f9a558b3307fd2e16cbd54d302f2d9d8d39735bc42915ffe2e8556170bf",
+    "size": 2985768
+  },
+  "python/iqpilot_private/konn3kt/hephaestus/manage_hephaestusd.cpython-312-aarch64-linux-gnu.so": {
+    "mode": 493,
+    "sha256": "bf714bb362991bf0c93294f81b1437f33f514811d16247b4ea74eb66005b7a09",
+    "size": 68096
+  },
+  "signatures": {
+    "python/iqpilot_private/konn3kt/hephaestus/ble_auth.cpython-312-aarch64-linux-gnu.so": "aQCqWsXMrzUzfWsggHGPJxNXjXQDWCyp5fvCAWj89aTJvo/+B3eTXBxoK7Hhsl4LL6MLHEyv/RriK2VDr07CCw==",
+    "python/iqpilot_private/konn3kt/hephaestus/ble_gatt.cpython-312-aarch64-linux-gnu.so": "AF11eso7oPs9WuPHrY/Dp4+yW68uF8rAtkOrZkZZoGnNOb7B0s9Plpj04YF6Iup042WYPosh2Wb+li+aycKzDQ==",
+    "python/iqpilot_private/konn3kt/hephaestus/ble_rpc_dispatch.cpython-312-aarch64-linux-gnu.so": "TDz7MfXyqrby/Q/JDP4x13V7zCbFBGGqthSNWXFO22pKBFkF4uYX9GsmvyzEfYeOL1mpWmcoXZWWg0GYI/RHDA==",
+    "python/iqpilot_private/konn3kt/hephaestus/ble_transportd.cpython-312-aarch64-linux-gnu.so": "RYwOX0lnwv9lOxIKaiSXtsRrVaBLYEdeRLWXMY0PltLlRZGtI/uJNJgHjLM7ZwmIRgTqkviodsAZzlep49tXBw==",
+    "python/iqpilot_private/konn3kt/hephaestus/hephaestusd.cpython-312-aarch64-linux-gnu.so": "+85szsJ331synmjApQpx0gWEcT4wsCXvOk4mo9EMbpXj0pPk4m4Wu2Eorx3KSc3qu1d2AqiAcX8dl6iL0OSIBw==",
+    "python/iqpilot_private/konn3kt/hephaestus/manage_hephaestusd.cpython-312-aarch64-linux-gnu.so": "bzWSlYiFtoGG76FIgkk7LUzgFX0cun6hijjL4jhOxFFduZdaw/U1xFk8HrnYTHovtSf0VS7ACwMo0E/VlHr8CA=="
+  }
+}
