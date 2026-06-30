@@ -1,0 +1,3 @@
+SConscript(['common/transformations/SConscript'])
+SConscript(['selfdrive/iqmodeld/SConscript'])
+SConscript(['selfdrive/iqlocd/SConscript'])
