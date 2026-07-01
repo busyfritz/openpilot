@@ -170,6 +170,8 @@ class Sidebar(Widget):
   def _update_panda_status(self):
     if ui_state.panda_type == log.PandaState.PandaType.unknown:
       self._panda_status.update(tr_noop("VEHICLE"), tr_noop("NO PANDA"), Colors.DANGER)
+    elif not ui_state.vehicle_connected:
+      self._panda_status.update(tr_noop("VEHICLE"), tr_noop("NO VEHICLE"), Colors.WARNING)
     else:
       self._panda_status.update(tr_noop("VEHICLE"), tr_noop("ONLINE"), Colors.GOOD)
 

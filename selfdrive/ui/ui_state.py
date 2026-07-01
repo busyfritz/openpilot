@@ -287,6 +287,7 @@ class UIState(IQUIState):
     self.ignition: bool = False
     self.recording_audio: bool = False
     self.panda_type: log.PandaState.PandaType = log.PandaState.PandaType.unknown
+    self.vehicle_connected: bool = False
     self.personality: log.LongitudinalPersonality = log.LongitudinalPersonality.standard
     self.has_longitudinal_control: bool = False
     self.CP: car.CarParams | None = None
@@ -337,12 +338,18 @@ class UIState(IQUIState):
         # Check ignition status across all pandas
         if self.panda_type != log.PandaState.PandaType.unknown:
           self.ignition = any(state.ignitionLine or state.ignitionCan for state in panda_states)
+          # A car is only actually attached when the harness detects it. Matches the
+          # in_car check hardwared.py uses for power management.
+          self.vehicle_connected = panda_states[0].harnessStatus != log.PandaState.HarnessStatus.notConnected
+        else:
+          self.vehicle_connected = False
     elif not self.sm.alive["pandaStates"]:
       # Time-based staleness (SubMaster tracks it against the service rate). The old
       # `5 * rl.get_fps()` frame threshold went near-zero right after the screen woke — rendering
       # had just resumed so raylib's FPS reading was still ~0 — which briefly flagged a perfectly
       # fresh pandaStates as stale, flashing panda_type to unknown ("UNAVAILABLE") for a few seconds.
       self.panda_type = log.PandaState.PandaType.unknown
+      self.vehicle_connected = False
 
     # Handle wide road camera state updates
     if self.sm.updated["wideRoadCameraState"]:
