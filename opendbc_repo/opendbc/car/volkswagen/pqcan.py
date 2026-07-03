@@ -1,6 +1,8 @@
 """
 Copyright © IQ.Lvbs, apart of Project Teal Lvbs, All Rights Reserved, licensed under https://konn3kt.com/tos/
 """
+from opendbc.car import DT_CTRL
+from opendbc.car.common.conversions import Conversions as CV
 
 def create_hca_steering_control(packer, bus, apply_torque, HCA_Status):
   values = {
@@ -206,3 +208,62 @@ def create_radar_gra(packer, bus, gra_stock, counter, set_btn=False, cancel=Fals
   if zeitluecke is not None:
     values["GRA_Zeitluecke"] = zeitluecke
   return packer.make_can_msg("GRA_Neu", bus, values)
+
+
+# "CC long" / redneck ACC: cars with stock GRA cruise but no factory ACC computer.
+# openpilot cannot command native accel, so it taps the stock cruise buttons
+# (GRA_Up_kurz / GRA_Down_kurz) to drive the stock cruise set-speed toward the planner's
+# desired accel. Ported from OPGM's create_gm_cc_spam_command (accel mode), in km/h.
+# Each short tap changes the stock GRA set-speed by 1 km/h; tap rate scales with |accel|.
+CC_SPAM_RATE_UP_MAX = 0.2    # min seconds between "+" taps at high accel
+CC_SPAM_RATE_DOWN_MAX = 0.2  # min seconds between "-" taps at high decel
+CC_SPAM_CATCHUP_MARGIN = 3.0  # km/h; if setpoint is this far from vEgo, tap at max rate
+
+
+def _pq_cc_spam_decision(controller, CS, actuators):
+  _CV = CV.MS_TO_KPH
+  accel = actuators.accel * _CV                              # m/s^2 -> km/h/s
+  speed_setpoint = int(round(CS.out.cruiseState.speed * _CV))  # current stock GRA setpoint, km/h
+  v_ego = CS.out.vEgo * _CV                                  # km/h
+  min_setpoint = int(round(CS.CP.minEnableSpeed * _CV))      # GRA floor, km/h
+
+  up_short = down_short = cancel = False
+  if speed_setpoint <= min_setpoint and accel < -1:
+    # At the stock cruise floor and still need to slow: bail so the car can coast.
+    cancel = True
+    controller.apply_speed = 0.0
+    rate = 0.04
+  elif accel < 0:
+    down_short = True
+    if speed_setpoint > v_ego + CC_SPAM_CATCHUP_MARGIN:
+      rate = CC_SPAM_RATE_DOWN_MAX  # setpoint well above actual speed -> bring it down fast
+    else:
+      rate = max(-1.0 / accel, CC_SPAM_RATE_DOWN_MAX)
+    controller.apply_speed = (speed_setpoint - 1) / _CV
+  elif accel > 0:
+    up_short = True
+    if speed_setpoint < v_ego - CC_SPAM_CATCHUP_MARGIN:
+      rate = CC_SPAM_RATE_UP_MAX  # setpoint well below actual speed -> bring it up fast
+    else:
+      rate = max(1.0 / accel, CC_SPAM_RATE_UP_MAX)
+    controller.apply_speed = (speed_setpoint + 1) / _CV
+  else:
+    controller.apply_speed = speed_setpoint / _CV
+    rate = float('inf')
+
+  return up_short, down_short, cancel, rate
+
+
+def create_pq_cc_spam_command(packer, bus, controller, CS, actuators):
+  up_short, down_short, cancel, rate = _pq_cc_spam_decision(controller, CS, actuators)
+
+  # Nothing to do this tick, or not enough time since the last tap for the desired rate.
+  if not (up_short or down_short or cancel):
+    return []
+  if (controller.frame - controller.last_cc_button_frame) * DT_CTRL <= rate:
+    return []
+
+  controller.last_cc_button_frame = controller.frame
+  counter = (CS.gra_stock_values["COUNTER"] + 1) % 16
+  return [create_radar_gra(packer, bus, CS.gra_stock_values, counter,
+                           up_short=up_short, down_short=down_short, cancel=cancel)]

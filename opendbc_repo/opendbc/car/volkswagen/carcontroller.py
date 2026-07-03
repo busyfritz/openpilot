@@ -227,6 +227,11 @@ class CarController(CarControllerBase):
     self.long_jerk_control = LongControlJerk(dt=(DT_CTRL * self.CCP.ACC_CONTROL_STEP)) if self.CP.flags & (VolkswagenFlags.MEB | VolkswagenFlags.MQB_EVO) else None
     self.long_limit_control = LongControlLimit(dt=(DT_CTRL * self.CCP.ACC_CONTROL_STEP)) if self.CP.flags & (VolkswagenFlags.MEB | VolkswagenFlags.MQB_EVO) else None
     self.gra_acc_counter_last = None
+    # "CC long" / redneck ACC state (PQ cars with stock GRA cruise but no factory ACC)
+    self.cc_only = bool(CP.flags & (VolkswagenFlagsIQ.IQ_CC_ONLY | VolkswagenFlagsIQ.IQ_CC_ONLY_NO_RADAR)) and self.CCS is pqcan
+    self.last_cc_button_frame = 0
+    self.apply_speed = 0.0
+    self.prev_long_active = False
     self.motor3_frame_last = None
     self.motor3_was_stopping = False
     self.motor3_resuming = False
@@ -464,6 +469,19 @@ class CarController(CarControllerBase):
           CS.out.vEgoRaw * CV.MS_TO_KPH, long_override, CS.travel_assist_available,
         ))
         self.accel_last = accel
+      elif self.cc_only:
+        # "CC long" / redneck ACC: no factory ACC to command, so tap the stock GRA cruise
+        # buttons (GRA_Up_kurz / GRA_Down_kurz) to drive the stock set-speed. Buttons go on
+        # the powertrain bus (self.CAN.aux) where the engine ECU reads GRA input.
+        spam_bus = self.CAN.aux
+        if CC.longActive and CS.out.vEgo > self.CP.minEnableSpeed:
+          can_sends.extend(pqcan.create_pq_cc_spam_command(self.packer_pt, spam_bus, self, CS, actuators))
+        elif self.prev_long_active and not CC.longActive and CS.out.cruiseState.enabled:
+          # openpilot disengaged while stock cruise is still on: cancel so the car coasts.
+          counter = (CS.gra_stock_values["COUNTER"] + 1) % 16
+          can_sends.append(pqcan.create_radar_gra(self.packer_pt, spam_bus, CS.gra_stock_values, counter, cancel=True))
+        self.prev_long_active = CC.longActive
+        self.accel_last = actuators.accel
       else:
         stopping = actuators.longControlState == LongCtrlState.stopping
         starting = actuators.longControlState == LongCtrlState.pid and (CS.esp_hold_confirmation or CS.out.vEgo < self.CP.vEgoStopping)
@@ -578,7 +596,7 @@ class CarController(CarControllerBase):
     if self.CP.flags & VolkswagenFlags.PQ:
       iq_lvbs_commander.update_turn_signals(self, CC, CS, can_sends)
 
-    if self.CP.openpilotLongitudinalControl and (self.CP.flags & VolkswagenFlags.PQ):
+    if self.CP.openpilotLongitudinalControl and (self.CP.flags & VolkswagenFlags.PQ) and not self.cc_only:
       if blend_active:
         can_sends.extend(self.radar_handler.update(
           self.packer_pt, self.frame, CS,
@@ -609,7 +627,7 @@ class CarController(CarControllerBase):
       can_sends.append(self.CCS.create_acc_buttons_control(self.packer_pt, bus_send, CS.gra_stock_values,
                                                            cancel=cancel_cmd, resume=resume_cmd))
 
-    if self.CP.openpilotLongitudinalControl and self.CCS == pqcan and not blend_active:
+    if self.CP.openpilotLongitudinalControl and self.CCS == pqcan and not blend_active and not self.cc_only:
       if self.frame % 3:
         can_sends.append(self.CCS.create_gra_neu(self.packer_pt, self.CAN.ext, CS.gra_stock_values, CC.longActive))
 
