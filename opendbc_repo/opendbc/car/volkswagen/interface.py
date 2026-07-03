@@ -215,6 +215,18 @@ class CarInterface(CarInterfaceBase):
       if ret.transmissionType == TransmissionType.manual:
         ret.minEnableSpeed = 4.5
 
+    # "CC long" / redneck ACC: PQ cars with stock GRA cruise but no factory ACC.
+    # openpilot has no ACC computer to command, so longitudinal is achieved by spamming
+    # the stock cruise buttons (GRA_Up_kurz / GRA_Down_kurz) — see carcontroller/pqcan.
+    # Auto-enable OP long for these cars (no user toggle). Panda ALLOW_DEBUG firmware required.
+    cc_only_flags = VolkswagenFlagsIQ.IQ_CC_ONLY | VolkswagenFlagsIQ.IQ_CC_ONLY_NO_RADAR
+    if (ret.flags & VolkswagenFlags.PQ) and (ret.flags & cc_only_flags):
+      ret.openpilotLongitudinalControl = True
+      safety_configs[0].safetyParam |= VolkswagenSafetyFlags.LONG_CONTROL.value
+      safety_configs[0].safetyParam |= VolkswagenSafetyFlags.ALLOW_LONG_ACCEL_WITH_GAS_PRESSED.value
+      # Stock GRA cannot hold below its minimum set speed; disengage/hand back below the floor.
+      ret.minEnableSpeed = 30 * CV.KPH_TO_MS
+
     # Per-vehicle overrides
 
     if candidate == CAR.PORSCHE_MACAN_MK1:
