@@ -222,9 +222,6 @@ class CarInterface(CarInterfaceBase):
     cc_only_flags = VolkswagenFlagsIQ.IQ_CC_ONLY | VolkswagenFlagsIQ.IQ_CC_ONLY_NO_RADAR
     if (ret.flags & VolkswagenFlags.PQ) and (ret.flags & cc_only_flags):
       ret.openpilotLongitudinalControl = True
-      safety_configs[0].safetyParam |= VolkswagenSafetyFlags.LONG_CONTROL.value
-      safety_configs[0].safetyParam |= VolkswagenSafetyFlags.ALLOW_LONG_ACCEL_WITH_GAS_PRESSED.value
-      # Stock GRA cannot hold below its minimum set speed; disengage/hand back below the floor.
       ret.minEnableSpeed = 30 * CV.KPH_TO_MS
 
     # Per-vehicle overrides

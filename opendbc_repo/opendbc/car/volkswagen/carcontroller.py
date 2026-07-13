@@ -562,7 +562,7 @@ class CarController(CarControllerBase):
     if hud_control.leadDistanceBars != self.lead_distance_bars_last:
       self.distance_bar_frame = self.frame
 
-    if self.frame % self.CCP.ACC_HUD_STEP == 0 and self.CP.openpilotLongitudinalControl:
+    if self.frame % self.CCP.ACC_HUD_STEP == 0 and self.CP.openpilotLongitudinalControl and not self.cc_only:
       fcw_alert = hud_control.visualAlert == VisualAlert.fcw
       d_unresponsive = hud_control.driverUnresponsive
       if self.CP.flags & (VolkswagenFlags.MEB | VolkswagenFlags.MQB_EVO):
