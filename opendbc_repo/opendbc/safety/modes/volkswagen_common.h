@@ -149,7 +149,7 @@ static void volkswagen_iq_decode_apd(const CANPacket_t *msg) {
 }
 
 static bool volkswagen_iq_lat_accel_torque_check(int desired_torque) {
-  if (!controls_allowed && !vw_iq_aol_active) {
+  if (!is_lat_active() && !vw_iq_aol_active) {
     vw_iq_debug_lat_accel = 0.0f;
     return desired_torque != 0;
   }
@@ -191,7 +191,7 @@ static float volkswagen_iq_angle_to_lat_accel(float angle_deg) {
 }
 
 static bool volkswagen_iq_alc_angle_accel_check(bool require_activation_gate) {
-  if (require_activation_gate && !controls_allowed && !vw_iq_aol_active) {
+  if (require_activation_gate && !is_lat_active() && !vw_iq_aol_active) {
     return true;
   }
   if (!vw_iq_apd_params_valid) {
