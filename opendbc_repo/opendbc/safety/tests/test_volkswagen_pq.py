@@ -277,6 +277,15 @@ class TestVolkswagenPqLowlineSafety(TestVolkswagenPqSafetyBase):
     self.safety.set_controls_allowed(1)
     self.assertTrue(self._tx(self._button_msg(resume=True)))
 
+  def test_aol_allows_torque_without_longitudinal_controls(self):
+    self.safety.set_controls_allowed(False)
+    self.safety.set_aol_params(True, False, False)
+    self.safety.set_acc_main_on(True)
+    self._rx(self._speed_msg(0))
+
+    self.assertTrue(self.safety.get_controls_allowed_lat())
+    self.assertTrue(self._tx(self._torque_cmd_msg(self.MAX_RATE_UP)))
+
 
 class TestVolkswagenPqNoCamSafety(TestVolkswagenPqStockSafety):
   FWD_BUS_LOOKUP = {2: 0}
