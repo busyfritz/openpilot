@@ -1,0 +1,23 @@
+{
+  "dmonitoring_model": {
+    "outputs": {
+      "dmonitoring_model_metadata.pkl": "31a86ab7a92dc0af088b15787a440dd3b210aa662e445a15145900e559a1b5c3",
+      "dmonitoring_model_tinygrad.pkl": "806c0ea75df6bf6dfeb81b832314c68e31df5865a52d0359e6eeb76d93ad2b52"
+    },
+    "signature": "e1eeb5ce45774a816c8da2394e6ee35ebf700b71dff345e0141dbab8ff592349"
+  },
+  "driving_policy": {
+    "outputs": {
+      "driving_policy_metadata.pkl": "15c8c1ad9073424ee1101b1f7170421140ed308ebaa7c917001130fb1760420b",
+      "driving_policy_tinygrad.pkl": "4cf92716721b3e155104677780796641e0cf47b9c568561e6326257ea953fb8c"
+    },
+    "signature": "639dff36c1001ed441a3b38942dc0a9ecedebe2dab267f0119e1e368a40512df"
+  },
+  "driving_vision": {
+    "outputs": {
+      "driving_vision_metadata.pkl": "a2be39088d38550e818f5ac1c6300a64605ba0bd0676a27fe7bbea9fddae90a1",
+      "driving_vision_tinygrad.pkl": "e4c702626a17f93fd2265854470f797cead5c542bfba127ed9120072c0c4794a"
+    },
+    "signature": "1664eeddf9908909e488c5d09239f64cfd43fe0eec9da0b3e05a6d774d43bb27"
+  }
+}
