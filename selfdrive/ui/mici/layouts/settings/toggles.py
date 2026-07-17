@@ -18,13 +18,21 @@ class TogglesLayoutMici(NavScroller):
     disengage = BigParamControl("disengage on accelerator", "DisengageOnAccelerator")
     ldw = BigParamControl("lane departure warnings", "IsLdwEnabled")
     is_metric = BigParamControl("use metric units", "IsMetric")
+    navigation = BigParamControl("navigate on IQ.Pilot", "NavigationEnabled",
+                                toggle_callback=self._on_navigation_toggled)
+    onscreen_nav = BigParamControl("on-screen navigation map", "OnScreenNavigation",
+                                   toggle_callback=self._on_onscreen_nav_toggled)
 
-    self._scroller.add_widgets([disengage, ldw, is_metric])
+    self._navigation = navigation
+    self._onscreen_nav = onscreen_nav
+    self._scroller.add_widgets([disengage, ldw, is_metric, navigation, onscreen_nav])
 
     self._refresh_toggles = (
       ("DisengageOnAccelerator", disengage),
       ("IsLdwEnabled", ldw),
       ("IsMetric", is_metric),
+      ("NavigationEnabled", navigation),
+      ("OnScreenNavigation", onscreen_nav),
     )
 
     if ui_state.params.get_bool("ShowDebugInfo"):
@@ -34,6 +42,16 @@ class TogglesLayoutMici(NavScroller):
   def show_event(self):
     super().show_event()
     self._update_toggles()
+
+  def _on_navigation_toggled(self, checked: bool):
+    if not checked:
+      ui_state.params.put_bool("OnScreenNavigation", False)
+      self._onscreen_nav.set_checked(False)
+
+  def _on_onscreen_nav_toggled(self, checked: bool):
+    if checked:
+      ui_state.params.put_bool("NavigationEnabled", True)
+      self._navigation.set_checked(True)
 
   def _update_toggles(self):
     ui_state.update_params()

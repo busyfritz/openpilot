@@ -47,6 +47,15 @@ DESCRIPTIONS = {
     "IQ.Dynamic (IQ longitudinal + dynamic mode), IQ.Standard (IQ longitudinal + relaxed personality), "
     "or Stock ACC."
   ),
+  "NavigationEnabled": tr_noop(
+    "Enable Navigate on IQ.Pilot. When on, navigation (navd) runs while driving so you can search "
+    "destinations, get turn-by-turn guidance, and use Mapbox routing. Also required for map-based "
+    "features that depend on navigation services."
+  ),
+  "OnScreenNavigation": tr_noop(
+    "Show the live navigation map in the driving view. Requires Navigate on IQ.Pilot to be enabled. "
+    "Uses Mapbox tiles when online (and offline tiles when configured)."
+  ),
 }
 
 
@@ -93,6 +102,18 @@ class TogglesLayout(Widget):
         lambda: tr("Use Metric System"),
         DESCRIPTIONS["IsMetric"],
         "metric.png",
+        False,
+      ),
+      "NavigationEnabled": (
+        lambda: tr("Navigate on IQ.Pilot"),
+        DESCRIPTIONS["NavigationEnabled"],
+        "iq/tile_nav.png",
+        False,
+      ),
+      "OnScreenNavigation": (
+        lambda: tr("On-Screen Navigation Map"),
+        DESCRIPTIONS["OnScreenNavigation"],
+        "road.png",
         False,
       ),
     }
@@ -296,6 +317,13 @@ class TogglesLayout(Widget):
 
   def _toggle_callback(self, state: bool, param: str):
     self._params.put_bool(param, state)
+    # On-screen maps need navd; turning the map on implies enabling navigation.
+    if param == "OnScreenNavigation" and state:
+      self._params.put_bool("NavigationEnabled", True)
+      self._toggles["NavigationEnabled"].action_item.set_state(True)
+    if param == "NavigationEnabled" and not state:
+      self._params.put_bool("OnScreenNavigation", False)
+      self._toggles["OnScreenNavigation"].action_item.set_state(False)
     if self._toggle_defs[param][3]:
       self._params.put_bool("OnroadCycleRequested", True)
 
