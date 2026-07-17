@@ -578,6 +578,7 @@ class CarState(CarStateBase):
 
     # Update ACC setpoint. When the setpoint reads as 255, the driver has not
     # yet established an ACC setpoint, so treat it as zero.
+    # CC-only: stock GRA setpoint (MO2_GRA_Soll) is the authority for OP vCruise.
     if cc_only:
       ret.cruiseState.speed = pt_cp.vl["Motor_2"]["MO2_GRA_Soll"] * CV.KPH_TO_MS
     elif self.CP.pcmCruise:
@@ -585,6 +586,9 @@ class CarState(CarStateBase):
     else:
       ret.cruiseState.speed = 0
     if ret.cruiseState.speed > 70:  # 255 kph in m/s == no current setpoint
+      ret.cruiseState.speed = 0
+    # Don't advertise a leftover GRA memory while main is off / unavailable.
+    if not ret.cruiseState.available:
       ret.cruiseState.speed = 0
 
     self.motor2_stock = pt_cp.vl["Motor_2"]

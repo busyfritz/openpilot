@@ -220,12 +220,14 @@ CC_SPAM_RATE_DOWN_MAX = 0.2  # min seconds between "-" taps at high decel
 CC_SPAM_CATCHUP_MARGIN = 3.0  # km/h; if setpoint is this far from vEgo, tap at max rate
 
 
-def _pq_cc_spam_decision(controller, CS, actuators):
+def _pq_cc_spam_decision(controller, CS, actuators, v_cruise_kph=None):
   _CV = CV.MS_TO_KPH
   accel = actuators.accel * _CV                              # m/s^2 -> km/h/s
   speed_setpoint = int(round(CS.out.cruiseState.speed * _CV))  # current stock GRA setpoint, km/h
   v_ego = CS.out.vEgo * _CV                                  # km/h
   min_setpoint = int(round(CS.CP.minEnableSpeed * _CV))      # GRA floor, km/h
+  # Never raise stock GRA above OP's set speed — prevents pcmCruiseSpeed-style runaway.
+  v_cruise = int(round(v_cruise_kph)) if v_cruise_kph is not None and v_cruise_kph < 250 else None
 
   up_short = down_short = cancel = False
   if speed_setpoint <= min_setpoint and accel < -1:
@@ -233,14 +235,14 @@ def _pq_cc_spam_decision(controller, CS, actuators):
     cancel = True
     controller.apply_speed = 0.0
     rate = 0.04
-  elif accel < 0:
+  elif accel < 0 or (v_cruise is not None and speed_setpoint > v_cruise):
     down_short = True
     if speed_setpoint > v_ego + CC_SPAM_CATCHUP_MARGIN:
       rate = CC_SPAM_RATE_DOWN_MAX  # setpoint well above actual speed -> bring it down fast
     else:
-      rate = max(-1.0 / accel, CC_SPAM_RATE_DOWN_MAX)
+      rate = max(-1.0 / accel, CC_SPAM_RATE_DOWN_MAX) if accel < 0 else CC_SPAM_RATE_DOWN_MAX
     controller.apply_speed = (speed_setpoint - 1) / _CV
-  elif accel > 0:
+  elif accel > 0 and (v_cruise is None or speed_setpoint < v_cruise):
     up_short = True
     if speed_setpoint < v_ego - CC_SPAM_CATCHUP_MARGIN:
       rate = CC_SPAM_RATE_UP_MAX  # setpoint well below actual speed -> bring it up fast
@@ -254,8 +256,8 @@ def _pq_cc_spam_decision(controller, CS, actuators):
   return up_short, down_short, cancel, rate
 
 
-def create_pq_cc_spam_command(packer, bus, controller, CS, actuators):
-  up_short, down_short, cancel, rate = _pq_cc_spam_decision(controller, CS, actuators)
+def create_pq_cc_spam_command(packer, bus, controller, CS, actuators, v_cruise_kph=None):
+  up_short, down_short, cancel, rate = _pq_cc_spam_decision(controller, CS, actuators, v_cruise_kph=v_cruise_kph)
 
   # Nothing to do this tick, or not enough time since the last tap for the desired rate.
   if not (up_short or down_short or cancel):

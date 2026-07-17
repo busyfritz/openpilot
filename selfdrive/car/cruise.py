@@ -255,6 +255,14 @@ class VCruiseHelper(VCruiseHelperIQ):
         self.update_speed_limit_assist_v_cruise_non_pcm()
         self.v_cruise_cluster_kph = self.v_cruise_kph
         self.update_button_timers(CS, enabled)
+        # PQ CC-long: follow driver stalk adjustments of stock GRA without letting
+        # OP's button-spam ratchet vCruise (spam is capped at vCruise).
+        if (self.CP.brand == "volkswagen" and self.CP.pcmCruise and not self.CP_IQ.pcmCruiseSpeed
+            and _enabled and CS.cruiseState.speed > 0):
+          stock_kph = CS.cruiseState.speed * CV.MS_TO_KPH
+          if stock_kph > self.v_cruise_kph + 0.5:
+            self.v_cruise_kph = float(np.clip(round(stock_kph, 1), self.v_cruise_min, V_CRUISE_MAX))
+            self.v_cruise_cluster_kph = self.v_cruise_kph
       else:
         self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
         self.v_cruise_cluster_kph = CS.cruiseState.speedCluster * CV.MS_TO_KPH
@@ -331,8 +339,17 @@ class VCruiseHelper(VCruiseHelperIQ):
         self.button_change_states[b.type.raw] = {"standstill": CS.cruiseState.standstill, "enabled": enabled}
 
   def initialize_v_cruise(self, CS, experimental_mode: bool, iq_dynamic_mode: bool) -> None:
-    # initializing is handled by the PCM
-    if self.CP.pcmCruise or self.v_cruise_initialized:
+    if self.v_cruise_initialized:
+      return
+    # Continuous PCM set-speed: car owns the setpoint, nothing to initialize.
+    if self.CP.pcmCruise and self.CP_IQ.pcmCruiseSpeed:
+      return
+
+    # PQ CC-long (pcmCruise + !pcmCruiseSpeed): seed OP set-speed from stock GRA.
+    stock_kph = CS.cruiseState.speed * CV.MS_TO_KPH
+    if 0 < stock_kph < V_CRUISE_MAX:
+      self.v_cruise_kph = float(int(round(stock_kph)))
+      self.v_cruise_cluster_kph = self.v_cruise_kph
       return
 
     initial_experimental_mode = experimental_mode and not iq_dynamic_mode
@@ -340,7 +357,7 @@ class VCruiseHelper(VCruiseHelperIQ):
     if initial_experimental_mode:
       initial = self.get_iq_mode_initial_set_speed_kph(CS.vEgo * CV.MS_TO_KPH, initial)
 
-    if any(b.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for b in CS.buttonEvents) and self.v_cruise_initialized:
+    if any(b.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for b in CS.buttonEvents) and self.v_cruise_kph_last:
       self.v_cruise_kph = self.v_cruise_kph_last
     else:
       self.v_cruise_kph = int(round(np.clip(CS.vEgo * CV.MS_TO_KPH, initial, V_CRUISE_MAX)))

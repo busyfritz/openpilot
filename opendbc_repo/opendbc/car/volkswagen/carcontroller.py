@@ -475,7 +475,9 @@ class CarController(CarControllerBase):
         # the powertrain bus (self.CAN.aux) where the engine ECU reads GRA input.
         spam_bus = self.CAN.aux
         if CC.longActive and CS.out.vEgo > self.CP.minEnableSpeed:
-          can_sends.extend(pqcan.create_pq_cc_spam_command(self.packer_pt, spam_bus, self, CS, actuators))
+          v_cruise_kph = float(hud_control.setSpeed) * CV.MS_TO_KPH
+          can_sends.extend(pqcan.create_pq_cc_spam_command(self.packer_pt, spam_bus, self, CS, actuators,
+                                                            v_cruise_kph=v_cruise_kph))
         elif self.prev_long_active and not CC.longActive and CS.out.cruiseState.enabled:
           # openpilot disengaged while stock cruise is still on: cancel so the car coasts.
           counter = (CS.gra_stock_values["COUNTER"] + 1) % 16

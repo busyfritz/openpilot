@@ -149,29 +149,45 @@ static void volkswagen_pq_rx_hook(const CANPacket_t *msg) {
     }
 
     if (volkswagen_longitudinal) {
-      if (msg->addr == MSG_MOTOR_5) {
-        if (!acc_main_on && !volkswagen_pq_acc_tsk_ready) {
+      // CC-only / no-cam PQ: SET/RESUME bits are not on ptCAN. Engage with stock GRA
+      // status (MO2_Sta_GRA) exactly like the pcmCruise path, and drop on main-off/cancel.
+      if (vw_iq_no_cam) {
+        if (msg->addr == MSG_MOTOR_2) {
+          int acc_status = (msg->data[2] & 0xC0U) >> 6;
+          bool cruise_engaged = (acc_status == 1U) || (acc_status == 2U);
+          pcm_cruise_check(cruise_engaged);
+        }
+        if ((msg->addr == MSG_MOTOR_5) && !acc_main_on) {
           controls_allowed = false;
         }
-      }
+        if ((msg->addr == MSG_GRA_NEU) && GET_BIT(msg, 9U)) {
+          controls_allowed = false;
+        }
+      } else {
+        if (msg->addr == MSG_MOTOR_5) {
+          if (!acc_main_on && !volkswagen_pq_acc_tsk_ready) {
+            controls_allowed = false;
+          }
+        }
 
-      if (msg->addr == MSG_MOTOR_2) {
-        volkswagen_pq_acc_tsk_ready = GET_BIT(msg, 21U);
-        if (!acc_main_on && !volkswagen_pq_acc_tsk_ready) {
-          controls_allowed = false;
+        if (msg->addr == MSG_MOTOR_2) {
+          volkswagen_pq_acc_tsk_ready = GET_BIT(msg, 21U);
+          if (!acc_main_on && !volkswagen_pq_acc_tsk_ready) {
+            controls_allowed = false;
+          }
         }
-      }
 
-      if (msg->addr == MSG_GRA_NEU) {
-        bool set_button = GET_BIT(msg, 16U);
-        bool resume_button = GET_BIT(msg, 17U);
-        if ((volkswagen_set_button_prev && !set_button) || (volkswagen_resume_button_prev && !resume_button)) {
-          controls_allowed = acc_main_on || volkswagen_pq_acc_tsk_ready;
-        }
-        volkswagen_set_button_prev = set_button;
-        volkswagen_resume_button_prev = resume_button;
-        if (GET_BIT(msg, 9U)) {
-          controls_allowed = false;
+        if (msg->addr == MSG_GRA_NEU) {
+          bool set_button = GET_BIT(msg, 16U);
+          bool resume_button = GET_BIT(msg, 17U);
+          if ((volkswagen_set_button_prev && !set_button) || (volkswagen_resume_button_prev && !resume_button)) {
+            controls_allowed = acc_main_on || volkswagen_pq_acc_tsk_ready;
+          }
+          volkswagen_set_button_prev = set_button;
+          volkswagen_resume_button_prev = resume_button;
+          if (GET_BIT(msg, 9U)) {
+            controls_allowed = false;
+          }
         }
       }
     } else {

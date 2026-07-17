@@ -77,6 +77,14 @@ class CarInterface(CarInterfaceBase):
       if (ret.flags & cc_only_flags) and not fingerprint[0]:
         ret.flags |= VolkswagenFlagsIQ.IQ_PQ_LOWLINE.value
         safety_configs[0].safetyParam |= VolkswagenSafetyFlags.PQ_LOWLINE.value
+        # Non-ECAN lowline NMS runs patched-EPS lateral; keep HCA active through 0 mph.
+        # Without steerAtStandstill, controlsd treats vEgo<=0.3 as standstill → latActive→torque=0.
+        ret.minSteerSpeed = 0
+        ret.steerAtStandstill = True
+
+      # Patched / zero-floor PQ EPS (B7, VwPqEpsPatched) can accept HCA at standstill.
+      if ret.minSteerSpeed <= 0:
+        ret.steerAtStandstill = True
 
       if any(msg in fingerprint[1] for msg in (0x1A0, 0xC2)):  # Bremse_1, Lenkwinkel_1
         ret.networkLocation = NetworkLocation.gateway
@@ -178,7 +186,8 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalActuatorDelay = 0.6
       if angle_lat_enabled:
         ret.steerControlType = structs.CarParams.SteerControlType.angle
-        ret.steerAtStandstill = bool(joystick_mode)
+        # Preserve standstill from patched/lowline PQ; joystick always allows it too.
+        ret.steerAtStandstill = bool(joystick_mode) or ret.steerAtStandstill
       else:
         CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
     elif ret.flags & VolkswagenFlags.MLB:
@@ -219,10 +228,21 @@ class CarInterface(CarInterfaceBase):
     # openpilot has no ACC computer to command, so longitudinal is achieved by spamming
     # the stock cruise buttons (GRA_Up_kurz / GRA_Down_kurz) — see carcontroller/pqcan.
     # Auto-enable OP long for these cars (no user toggle). Panda ALLOW_DEBUG firmware required.
+    #
+    # Engagement is still owned by stock GRA (SET bits are not on ptCAN):
+    #   MO2_Sta_GRA  -> cruiseState.enabled  (pcmEnable / blue border)
+    #   MO2_GRA_Soll -> cruiseState.speed    (stock setpoint; OP vCruise inits from it)
+    # OP owns vCruise (pcmCruiseSpeed=False) so CC button-spam cannot ratchet the set speed.
     cc_only_flags = VolkswagenFlagsIQ.IQ_CC_ONLY | VolkswagenFlagsIQ.IQ_CC_ONLY_NO_RADAR
-    if (ret.flags & VolkswagenFlags.PQ) and (ret.flags & cc_only_flags):
+    pq_cc_only = bool((ret.flags & VolkswagenFlags.PQ) and (ret.flags & cc_only_flags))
+    if pq_cc_only:
       ret.openpilotLongitudinalControl = True
-      ret.minEnableSpeed = 30 * CV.KPH_TO_MS
+      # Stock GRA's usual floor is ~30 km/h, but lowline/patched-EPS lateral works to 0 —
+      # don't block engage with an OP soft floor when the rack can already steer there.
+      if ret.flags & VolkswagenFlagsIQ.IQ_PQ_LOWLINE:
+        ret.minEnableSpeed = 0
+      else:
+        ret.minEnableSpeed = 30 * CV.KPH_TO_MS
 
     # Per-vehicle overrides
 
@@ -234,6 +254,9 @@ class CarInterface(CarInterfaceBase):
       safety_configs[0].safetyParam |= VolkswagenSafetyFlags.PQ_ACC_FTS_EPB.value
 
     ret.pcmCruise = not ret.openpilotLongitudinalControl
+    if pq_cc_only:
+      # Keep OP long (button spam) but follow stock GRA for engage + setpoint.
+      ret.pcmCruise = True
     if ret.flags & (VolkswagenFlags.MEB | VolkswagenFlags.MQB_EVO):
       ret.startingState = True
       ret.startAccel = 0.8
@@ -364,4 +387,10 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def _get_params_iq(stock_cp: structs.CarParams, ret: structs.IQCarParams, candidate, fingerprint: dict[int, dict[int, int]], car_fw: list[structs.CarParams.CarFw], alpha_long: bool, is_release_iq: bool, docs: bool) -> structs.IQCarParams:
+    cc_only_flags = VolkswagenFlagsIQ.IQ_CC_ONLY | VolkswagenFlagsIQ.IQ_CC_ONLY_NO_RADAR
+    # PQ CC-long: stock GRA still engages (pcmCruise), but OP must own the set-speed.
+    # If pcmCruiseSpeed stays True, CC button-spam raises MO2_GRA_Soll and vCruise
+    # tracks it → runaway to max (e.g. 100+ mph).
+    if (stock_cp.flags & VolkswagenFlags.PQ) and (stock_cp.flags & cc_only_flags):
+      ret.pcmCruiseSpeed = False
     return ret

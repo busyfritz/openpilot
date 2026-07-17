@@ -297,5 +297,46 @@ class TestVolkswagenPqNoCamSafety(TestVolkswagenPqStockSafety):
     self.safety.init_tests()
 
 
+class TestVolkswagenPqCcOnlyLongSafety(TestVolkswagenPqLongSafety):
+  """CC-only PQ long: SET/RESUME absent on ptCAN; engage via MO2_Sta_GRA."""
+  FWD_BUS_LOOKUP = {2: 0}
+
+  def setUp(self):
+    self.packer = CANPackerSafety("vw_pq")
+    self.safety = libsafety_py.libsafety
+    safety_param = (VolkswagenSafetyFlags.LONG_CONTROL |
+                    VolkswagenSafetyFlags.ALLOW_LONG_ACCEL_WITH_GAS_PRESSED |
+                    VolkswagenSafetyFlags.PQ_NO_CAM_BUS)
+    self.safety.set_safety_hooks(CarParams.SafetyModel.volkswagenPq, safety_param)
+    self.safety.init_tests()
+
+  # Button-edge engagement does not apply on CC-only cars.
+  def test_set_and_resume_buttons(self):
+    pass
+
+  def test_set_and_resume_buttons_with_tsk_only(self):
+    pass
+
+  def test_main_switch_tsk_or(self):
+    pass
+
+  def test_main_switch_flicker_tsk_holds(self):
+    pass
+
+  def test_enable_control_allowed_from_cruise(self):
+    self._rx(self._motor_5_msg(main_switch=True))
+    self._rx(self._pcm_status_msg(False))
+    self.assertFalse(self.safety.get_controls_allowed())
+    self._rx(self._pcm_status_msg(True))
+    self.assertTrue(self.safety.get_controls_allowed())
+
+  def test_disable_control_allowed_from_cruise(self):
+    self._rx(self._motor_5_msg(main_switch=True))
+    self._rx(self._pcm_status_msg(True))
+    self.assertTrue(self.safety.get_controls_allowed())
+    self._rx(self._pcm_status_msg(False))
+    self.assertFalse(self.safety.get_controls_allowed())
+
+
 if __name__ == "__main__":
   unittest.main()
