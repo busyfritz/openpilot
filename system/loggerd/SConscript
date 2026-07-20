@@ -1,0 +1,34 @@
+Import('env', 'arch', 'messaging', 'common', 'visionipc')
+
+libs = [common, messaging, visionipc,
+        'avformat', 'avcodec', 'avutil',
+        'yuv', 'OpenCL', 'pthread', 'zstd']
+
+src = ['logger.cc', 'zstd_writer.cc', 'video_writer.cc', 'encoder/encoder.cc', 'encoder/v4l_encoder.cc', 'encoder/jpeg_encoder.cc']
+if arch != "larch64":
+  src += ['encoder/ffmpeg_encoder.cc']
+
+if arch == "Darwin":
+  # fix OpenCL
+  del libs[libs.index('OpenCL')]
+  env['FRAMEWORKS'] = ['OpenCL']
+  # exclude v4l
+  del src[src.index('encoder/v4l_encoder.cc')]
+
+logger_lib = env.Library('logger', src)
+libs.insert(0, logger_lib)
+
+env.Program('loggerd', ['loggerd.cc'], LIBS=libs)
+env.Program('encoderd', ['encoderd.cc'], LIBS=libs + ["jpeg"])
+env.Program('bootlog.cc', LIBS=libs)
+
+# Standalone hardware HEVC decoder (Venus/msm_vidc) for the offroad route viewer, reusing comma's
+# tested decoder from tools/replay/qcom_decoder.cc.
+if arch == "larch64":
+  # Compile comma's decoder under a distinct object name (tools/replay also builds qcom_decoder.o).
+  qcom_obj = env.Object('encoder/qcom_decoder_hwdec', '#tools/replay/qcom_decoder.cc')
+  env.Program('encoder/v4l_decode', ['encoder/v4l_decode.cc', qcom_obj],
+              LIBS=[common, visionipc, 'yuv', 'avformat', 'avcodec', 'avutil', 'pthread', 'OpenCL', 'zmq'])
+
+if GetOption('extras'):
+  env.Program('tests/test_logger', ['tests/test_runner.cc', 'tests/test_logger.cc', 'tests/test_zstd_writer.cc'], LIBS=libs + ['curl', 'crypto'])

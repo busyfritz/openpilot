@@ -1,0 +1,33 @@
+{
+  "python/iqpilot_private/__init__.py": {
+    "mode": 420,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "size": 0
+  },
+  "python/iqpilot_private/konn3kt/__init__.py": {
+    "mode": 420,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "size": 0
+  },
+  "python/iqpilot_private/konn3kt/iqlvbs/__init__.py": {
+    "mode": 420,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "size": 0
+  },
+  "python/iqpilot_private/konn3kt/iqlvbs/iqlvbs_commander.cpython-312-aarch64-linux-gnu.so": {
+    "mode": 493,
+    "sha256": "f452c3278cd5f8cc40db981cae2bd91f4796a91abaa76b6001dbb5dad80480d6",
+    "size": 68080
+  },
+  "runtime": {
+    "entries": {
+      "iqpilot_private.konn3kt.iqlvbs.iqlvbs_commander": {
+        "path": "python/iqpilot_private/konn3kt/iqlvbs/iqlvbs_commander.cpython-312-aarch64-linux-gnu.so",
+        "type": "python-module"
+      }
+    }
+  },
+  "signatures": {
+    "python/iqpilot_private/konn3kt/iqlvbs/iqlvbs_commander.cpython-312-aarch64-linux-gnu.so": "7DvAdsDSBnDIh3f7PqVWudkB+Njn6o7HAvtiZPrWpO0GW40B/DXhRLDvJ9rT+O2Lw3pLJBq04qA1szhbcFBhCw=="
+  }
+}

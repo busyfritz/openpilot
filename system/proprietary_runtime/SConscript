@@ -1,0 +1,71 @@
+# Copyright © IQ.Lvbs, apart of Project Teal Lvbs, All Rights Reserved, licensed under https://konn3kt.com/tos
+import os
+import sysconfig
+
+Import('env', 'common')
+
+_PRIVATE_ROOT_RAW = os.environ.get("IQPILOT_PROPRIETARY_RUNTIME_SOURCE_ROOT", "").strip()
+_REQUIRE_PRIVATE_SOURCE = os.environ.get("IQPILOT_BUILD_PROPRIETARY_RUNTIME", "") == "1"
+_ALLOW_HOST_RUNTIME = os.environ.get("IQPILOT_BUILD_HOST_RUNTIME", "") == "1"
+_BUILD_NATIVE_RUNTIME = env["PLATFORM"] != "darwin" or _ALLOW_HOST_RUNTIME
+
+if _PRIVATE_ROOT_RAW:
+  from pathlib import Path
+  _PRIVATE_ROOT = Path(_PRIVATE_ROOT_RAW).resolve()
+  _PRIVATE_SOURCES = {
+    name: _PRIVATE_ROOT / name
+    for name in ("runner.cc", "bundle_common.cc", "bundle_common.h", "verified_import.cc")
+  }
+else:
+  _PRIVATE_ROOT = None
+  _PRIVATE_SOURCES = {}
+
+
+def _private_sources_ready() -> bool:
+  if _PRIVATE_ROOT is None:
+    if _REQUIRE_PRIVATE_SOURCE:
+      raise FileNotFoundError(
+        "IQPILOT_PROPRIETARY_RUNTIME_SOURCE_ROOT is not set"
+      )
+    print(env.PrettyNote('SKIP', "proprietary runtime native build — no private source root configured"))
+    return False
+
+  missing = [str(path) for path in _PRIVATE_SOURCES.values() if not path.exists()]
+  if not missing:
+    return True
+
+  if _REQUIRE_PRIVATE_SOURCE:
+    raise FileNotFoundError(
+      "missing proprietary runtime source files:\n" + "\n".join(missing)
+    )
+  print(env.PrettyNote('SKIP', f"proprietary runtime native build — private source unavailable at {_PRIVATE_ROOT}"))
+  return False
+
+
+runner = None
+verified_import = None
+
+if not _BUILD_NATIVE_RUNTIME:
+  print(env.PrettyNote('SKIP', "proprietary runtime host build on darwin (IQPILOT_BUILD_HOST_RUNTIME=1 to override)"))
+elif _private_sources_ready():
+  runner = env.Program(
+    'iqpilot_bundle_runner',
+    [str(_PRIVATE_SOURCES["runner.cc"]), str(_PRIVATE_SOURCES["bundle_common.cc"])],
+    LIBS=common + ['json11', 'crypto', 'pthread'],
+  )
+
+  python_module_env = env.Clone()
+  python_module_env["SHLIBPREFIX"] = ""
+  python_module_env["SHLIBSUFFIX"] = ".so"
+  python_module_env.Append(CPPPATH=[sysconfig.get_paths()["include"], str(_PRIVATE_ROOT)])
+  python_module_env["LINKFLAGS"] = [flag for flag in python_module_env["LINKFLAGS"] if flag != "-Wl,--no-undefined"]
+  if python_module_env["PLATFORM"] == "darwin":
+    python_module_env.Append(LINKFLAGS=["-undefined", "dynamic_lookup"])
+
+  verified_import = python_module_env.SharedLibrary(
+    '_verified_import',
+    [str(_PRIVATE_SOURCES["verified_import.cc"]), str(_PRIVATE_SOURCES["bundle_common.cc"])],
+    LIBS=common + ['json11', 'crypto', 'pthread'],
+  )
+
+Export('runner', 'verified_import')
