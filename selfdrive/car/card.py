@@ -15,12 +15,12 @@ from openpilot.common.params import Params, UnknownKeyName
 from openpilot.common.realtime import config_realtime_process, lock_memory, Priority, Ratekeeper
 from openpilot.common.swaglog import cloudlog, ForwardingHandler
 
-from opendbc.car import DT_CTRL, structs
-from opendbc.car.can_definitions import CanData, CanRecvCallable, CanSendCallable
-from opendbc.car.carlog import carlog
-from opendbc.car.fw_versions import ObdCallback
-from opendbc.car.car_helpers import get_car, interfaces
-from opendbc.car.interfaces import CarInterfaceBase, RadarInterfaceBase
+from iqdbc.car import DT_CTRL, structs
+from iqdbc.car.can_definitions import CanData, CanRecvCallable, CanSendCallable
+from iqdbc.car.carlog import carlog
+from iqdbc.car.fw_versions import ObdCallback
+from iqdbc.car.car_helpers import get_car, interfaces
+from iqdbc.car.interfaces import CarInterfaceBase, RadarInterfaceBase
 from openpilot.selfdrive.pandad import can_capnp_to_list, can_list_to_can_capnp
 from openpilot.selfdrive.car.cruise import VCruiseHelper
 from openpilot.selfdrive.car.helpers import convert_iq_car_control_compact, convert_to_capnp

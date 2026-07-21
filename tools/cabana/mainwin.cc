@@ -98,10 +98,10 @@ void MainWindow::createActions() {
   QObject::connect(open_recent_menu, &QMenu::aboutToShow, this, &MainWindow::updateRecentFileMenu);
 
   file_menu->addSeparator();
-  QMenu *load_opendbc_menu = file_menu->addMenu(tr("Load DBC from commaai/opendbc"));
-  // load_opendbc_menu->setStyleSheet("QMenu { menu-scrollable: true; }");
+  QMenu *load_iqdbc_menu = file_menu->addMenu(tr("Load DBC from commaai/iqdbc"));
+  // load_iqdbc_menu->setStyleSheet("QMenu { menu-scrollable: true; }");
   for (const auto &dbc_name : QDir(OPENDBC_FILE_PATH).entryList({"*.dbc"}, QDir::Files, QDir::Name)) {
-    load_opendbc_menu->addAction(dbc_name, [this, name = dbc_name]() { loadDBCFromOpendbc(name); });
+    load_iqdbc_menu->addAction(dbc_name, [this, name = dbc_name]() { loadDBCFromOpendbc(name); });
   }
 
   file_menu->addAction(tr("Load DBC From Clipboard"), [=]() { loadFromClipboard(); });

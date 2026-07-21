@@ -10,7 +10,7 @@
 #include "board/early_init.h"
 #include "board/provision.h"
 
-#include "opendbc/safety/safety.h"
+#include "iqdbc/safety/safety.h"
 
 #include "board/health.h"
 

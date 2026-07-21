@@ -1,8 +1,20 @@
 #!/usr/bin/env python3
+from types import SimpleNamespace
+
 import cereal.messaging as messaging
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process
-from openpilot.selfdrive.monitoring.helpers import DriverMonitoring
+from openpilot.selfdrive.monitoring.policy import DriverMonitoring
+
+
+def get_dm_inputs(sm):
+  return {
+    'driverStateV2': sm['driverStateV2'],
+    'liveCalibration': sm['liveCalibration'],
+    'carState': sm['carState'],
+    'selfdriveState': SimpleNamespace(enabled=sm['selfdriveState'].enabled or sm['carControl'].latActive),
+    'modelV2': sm['modelV2'],
+  }
 
 
 def dmonitoringd_thread():
@@ -25,9 +37,9 @@ def dmonitoringd_thread():
 
     valid = sm.all_checks()
     if demo_mode and sm.valid['driverStateV2']:
-      DM.run_step(sm, demo=demo_mode)
+      DM.run_step(get_dm_inputs(sm), demo=True)
     elif valid:
-      DM.run_step(sm, demo=demo_mode)
+      DM.run_step(get_dm_inputs(sm), demo=demo_mode)
 
     # publish
     dat = DM.get_state_packet(valid=valid)
@@ -40,9 +52,9 @@ def dmonitoringd_thread():
 
     # save rhd virtual toggle every 5 mins
     if (sm['driverStateV2'].frameId % 6000 == 0 and not demo_mode and
-     DM.wheelpos.prob_offseter.filtered_stat.n > DM.settings._WHEELPOS_FILTER_MIN_COUNT and
-     DM.wheel_on_right == (DM.wheelpos.prob_offseter.filtered_stat.M > DM.settings._WHEELPOS_THRESHOLD)):
-      params.put_bool_nonblocking("IsRhdDetected", DM.wheel_on_right)
+     DM.wheelpos_offsetter.filtered_stat.n > DM.settings._WHEELPOS_FILTER_MIN_COUNT and
+     DM.wheel_on_right == (DM.wheelpos_offsetter.filtered_stat.M > DM.settings._WHEELPOS_THRESHOLD)):
+      params.put_bool("IsRhdDetected", DM.wheel_on_right)
 
 def main():
   dmonitoringd_thread()

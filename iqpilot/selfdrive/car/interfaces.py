@@ -1,7 +1,7 @@
 """
 Copyright © IQ.Lvbs, apart of Project Teal Lvbs, All Rights Reserved, licensed under https://konn3kt.com/tos
 """
-from opendbc.car import structs as _dbc
+from iqdbc.car import structs as _dbc
 from openpilot.common.params import Params as _Store
 from openpilot.common.swaglog import cloudlog as _log
 from openpilot.selfdrive.controls.lib.latcontrol_torque import get_nn_model_path as _resolve_nn

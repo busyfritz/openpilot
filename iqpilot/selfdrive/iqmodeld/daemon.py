@@ -11,7 +11,7 @@ import numpy as np
 from cereal import car, custom, log
 from cereal.messaging import PubMaster, SubMaster
 from msgq.visionipc import VisionBuf, VisionIpcClient, VisionStreamType
-from opendbc.car.car_helpers import get_demo_car_params
+from iqdbc.car.car_helpers import get_demo_car_params
 from setproctitle import setproctitle
 
 from openpilot.common.filter_simple import FirstOrderFilter

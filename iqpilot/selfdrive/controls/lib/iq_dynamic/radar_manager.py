@@ -3,7 +3,7 @@ Copyright © IQ.Lvbs, apart of Project Teal Lvbs, All Rights Reserved, licensed 
 
 RadarManager — IQ.Dynamics side of "Blend IQ.Pilot + Stock ACC Radar" (VW PQ only).
 
-Decides the high-level intent for the stock ACC radar and writes it onto iqCarControl for the opendbc
+Decides the high-level intent for the stock ACC radar and writes it onto iqCarControl for the iqdbc
 PQRadarHandler to execute on CAN. It does NOT touch CAN or read radar feedback directly: the handler
 (car process) owns the bus and the failure latch, and the carcontroller gates radar-accel passthrough
 on the live ACS_Sta_ADR. That keeps the desync guard automatic — if chill is requested but the radar
@@ -34,7 +34,7 @@ class RadarManager:
     if getattr(CP, "brand", "") != "volkswagen":
       return False
     try:
-      from opendbc.car.volkswagen.values import VolkswagenFlags
+      from iqdbc.car.volkswagen.values import VolkswagenFlags
       return bool(CP.flags & VolkswagenFlags.PQ)
     except Exception:
       return False

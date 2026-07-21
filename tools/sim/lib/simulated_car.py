@@ -1,9 +1,9 @@
 import traceback
 import cereal.messaging as messaging
 
-from opendbc.can.packer import CANPacker
-from opendbc.can.parser import CANParser
-from opendbc.car.honda.values import HondaSafetyFlags
+from iqdbc.can.packer import CANPacker
+from iqdbc.can.parser import CANParser
+from iqdbc.car.honda.values import HondaSafetyFlags
 from openpilot.common.params import Params
 from openpilot.selfdrive.pandad.pandad_api_impl import can_list_to_can_capnp
 from openpilot.tools.sim.lib.common import SimulatorState

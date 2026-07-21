@@ -1,0 +1,5 @@
+SConscript(['iqdbc/dbc/SConscript'])
+
+# test files
+if GetOption('extras'):
+  SConscript('iqdbc/safety/tests/libsafety/SConscript')

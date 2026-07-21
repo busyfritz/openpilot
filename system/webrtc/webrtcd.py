@@ -542,6 +542,22 @@ class StreamRequestBody:
   ui_stream: bool = False
 
 
+def _new_stream_session(offer_sdp: str, body: StreamRequestBody, debug_mode: bool):
+  if Params().get_bool("Konn3ktLibdatachannelWebRTC"):
+    try:
+      from openpilot.system.webrtc.webrtcd_ldc import StreamSessionLibdatachannel
+      return StreamSessionLibdatachannel(
+        offer_sdp, body.cameras, body.bridge_services_in, body.bridge_services_out, body.iceServers, debug_mode,
+        ui_stream=body.ui_stream,
+      )
+    except Exception:
+      logging.getLogger("webrtcd").exception("libdatachannel unavailable; falling back to aiortc")
+  return StreamSession(
+    offer_sdp, body.cameras, body.bridge_services_in, body.bridge_services_out, body.iceServers, debug_mode,
+    ui_stream=body.ui_stream,
+  )
+
+
 async def get_stream(request: 'web.Request'):
   stream_dict, debug_mode = request.app['streams'], request.app['debug']
   logger = logging.getLogger("webrtcd")
@@ -561,8 +577,7 @@ async def get_stream(request: 'web.Request'):
         logger.exception("Failed to stop previous stream session")
     stream_dict.clear()
 
-    session = StreamSession(offer_sdp, body.cameras, body.bridge_services_in, body.bridge_services_out, body.iceServers, debug_mode,
-                            ui_stream=body.ui_stream)
+    session = _new_stream_session(offer_sdp, body, debug_mode)
     # Creating an answer can occasionally stall (ICE gathering, codec negotiation, etc).
     # Bound it so the HTTP request doesn't hang forever and athena can surface a useful error.
     try:
@@ -579,8 +594,7 @@ async def get_stream(request: 'web.Request'):
       else:
         logger.info("Retrying with fresh session and original SDP (no mDNS host candidates removed)")
 
-      session = StreamSession(retry_offer_sdp, body.cameras, body.bridge_services_in, body.bridge_services_out, body.iceServers, debug_mode,
-                              ui_stream=body.ui_stream)
+      session = _new_stream_session(retry_offer_sdp, body, debug_mode)
       answer = await asyncio.wait_for(session.get_answer(), timeout=15.0)
 
     session.start()

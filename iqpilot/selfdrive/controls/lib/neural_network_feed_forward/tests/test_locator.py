@@ -9,7 +9,7 @@ import os
 
 import pytest
 
-from opendbc.car import structs
+from iqdbc.car import structs
 import openpilot.selfdrive.controls.lib.latcontrol_torque as locator
 
 

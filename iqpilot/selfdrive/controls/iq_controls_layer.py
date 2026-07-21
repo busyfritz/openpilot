@@ -10,7 +10,7 @@ import time
 import cereal.messaging as messaging
 from cereal import log, custom
 
-from opendbc.car import structs
+from iqdbc.car import structs
 from openpilot.common.constants import CV
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog

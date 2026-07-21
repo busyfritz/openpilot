@@ -6,7 +6,7 @@ import threading
 from flaky import flaky
 from collections import defaultdict
 
-from opendbc.car.structs import CarParams
+from iqdbc.car.structs import CarParams
 from panda.tests.hitl.helpers import time_many_sends, get_random_can_messages, clear_can_buffers
 
 @flaky(max_runs=3, min_passes=1)

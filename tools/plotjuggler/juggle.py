@@ -10,7 +10,7 @@ import requests
 import argparse
 from functools import partial
 
-from opendbc.car.fingerprints import MIGRATION
+from iqdbc.car.fingerprints import MIGRATION
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.swaglog import cloudlog
 from openpilot.tools.cabana.dbc.generate_dbc_json import generate_dbc_dict

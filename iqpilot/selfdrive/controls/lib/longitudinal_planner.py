@@ -6,7 +6,7 @@ from datetime import datetime
 import numpy as np
 
 from cereal import messaging, custom
-from opendbc.car import structs
+from iqdbc.car import structs
 from openpilot.common.constants import CV
 from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.car.cruise import V_CRUISE_MAX

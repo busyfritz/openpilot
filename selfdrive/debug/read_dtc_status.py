@@ -2,9 +2,9 @@
 import sys
 import argparse
 from subprocess import check_output, CalledProcessError
-from opendbc.car.carlog import carlog
-from opendbc.car.uds import UdsClient, SESSION_TYPE, DTC_REPORT_TYPE, DTC_STATUS_MASK_TYPE, get_dtc_num_as_str, get_dtc_status_names
-from opendbc.car.structs import CarParams
+from iqdbc.car.carlog import carlog
+from iqdbc.car.uds import UdsClient, SESSION_TYPE, DTC_REPORT_TYPE, DTC_STATUS_MASK_TYPE, get_dtc_num_as_str, get_dtc_status_names
+from iqdbc.car.structs import CarParams
 from panda import Panda
 
 parser = argparse.ArgumentParser(description="read DTC status")

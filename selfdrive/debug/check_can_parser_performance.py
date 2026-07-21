@@ -4,7 +4,7 @@ import time
 from tqdm import tqdm
 
 from cereal import car
-from opendbc.car.tests.routes import CarTestRoute
+from iqdbc.car.tests.routes import CarTestRoute
 from openpilot.selfdrive.car.tests.test_models import TestCarModelBase
 from openpilot.tools.plotjuggler.juggle import DEMO_ROUTE
 

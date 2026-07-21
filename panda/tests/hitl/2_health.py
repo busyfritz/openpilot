@@ -1,7 +1,7 @@
 import time
 
-from opendbc.car.hyundai.values import HyundaiSafetyFlags
-from opendbc.car.structs import CarParams
+from iqdbc.car.hyundai.values import HyundaiSafetyFlags
+from iqdbc.car.structs import CarParams
 from panda import Panda
 
 

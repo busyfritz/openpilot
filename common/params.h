@@ -18,7 +18,6 @@ enum ParamKeyFlag {
   DONT_LOG = 0x20,
   DEVELOPMENT_ONLY = 0x40,
   CLEAR_ON_IGNITION_ON = 0x80,
-  BACKUP = 0x100,
   ALL = 0xFFFFFFFF
 };
 
@@ -46,7 +45,7 @@ public:
   Params(const Params&) = delete;
   Params& operator=(const Params&) = delete;
 
-  std::vector<std::string> allKeys(ParamKeyFlag flag = ALL) const;
+  std::vector<std::string> allKeys() const;
   bool checkKey(const std::string &key);
   ParamKeyFlag getKeyFlag(const std::string &key);
   ParamKeyType getKeyType(const std::string &key);

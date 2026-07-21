@@ -50,32 +50,35 @@ class IQUIState:
     pass
 
   def onroad_brightness_handle_alerts(self, started: bool, alert):
-    has_alert = started and self.onroad_brightness != OnroadBrightness.AUTO and alert is not None
-
-    self.update_onroad_brightness(has_alert)
-    if has_alert:
+    # while an alert is on screen the dim countdown is frozen and re-armed; otherwise it ticks down
+    alert_showing = bool(started and alert is not None and self.onroad_brightness != OnroadBrightness.AUTO)
+    self.update_onroad_brightness(alert_showing)
+    if alert_showing:
       self.reset_onroad_sleep_timer()
 
   def update_onroad_brightness(self, has_alert: bool) -> None:
-    if has_alert:
-      return
-
-    if self.onroad_brightness_timer > 0:
+    if not has_alert and self.onroad_brightness_timer > 0:
       self.onroad_brightness_timer -= 1
 
   def reset_onroad_sleep_timer(self, timer_status: OnroadTimerStatus = OnroadTimerStatus.NONE) -> None:
-    if timer_status == OnroadTimerStatus.PAUSE and self.onroad_brightness_timer != ONROAD_BRIGHTNESS_TIMER_PAUSED:
-      self.onroad_brightness_timer = ONROAD_BRIGHTNESS_TIMER_PAUSED
-    elif (self.onroad_brightness_timer_param >= 0 and self.onroad_brightness != OnroadBrightness.AUTO and
-          self.onroad_brightness_timer != ONROAD_BRIGHTNESS_TIMER_PAUSED) or timer_status == OnroadTimerStatus.RESUME:
-      if self.onroad_brightness == OnroadBrightness.AUTO_DARK:
-        self.onroad_brightness_timer = 15 * gui_app.target_fps
-      else:
-        self.onroad_brightness_timer = self.onroad_brightness_timer_param * gui_app.target_fps
+    paused = self.onroad_brightness_timer == ONROAD_BRIGHTNESS_TIMER_PAUSED
+
+    # an explicit PAUSE latches the timer and never re-arms
+    if timer_status == OnroadTimerStatus.PAUSE:
+      if not paused:
+        self.onroad_brightness_timer = ONROAD_BRIGHTNESS_TIMER_PAUSED
+      return
+
+    dimming_active = self.onroad_brightness_timer_param >= 0 and self.onroad_brightness != OnroadBrightness.AUTO
+    if timer_status == OnroadTimerStatus.RESUME or (dimming_active and not paused):
+      seconds = 15 if self.onroad_brightness == OnroadBrightness.AUTO_DARK else self.onroad_brightness_timer_param
+      self.onroad_brightness_timer = seconds * gui_app.target_fps
 
   @property
   def onroad_brightness_timer_expired(self) -> bool:
-    return self.onroad_brightness != OnroadBrightness.AUTO and self.onroad_brightness_timer == 0
+    if self.onroad_brightness == OnroadBrightness.AUTO:
+      return False
+    return self.onroad_brightness_timer == 0
 
   @property
   def auto_onroad_brightness(self) -> bool:
@@ -207,18 +210,20 @@ class IQDevice:
 
   @staticmethod
   def set_min_onroad_brightness(_ui_state, min_brightness: int) -> int:
-    if _ui_state.onroad_brightness == OnroadBrightness.AUTO_DARK:
-      min_brightness = 10
-
-    return min_brightness
+    dark = _ui_state.onroad_brightness == OnroadBrightness.AUTO_DARK
+    return 10 if dark else min_brightness
 
   @staticmethod
   def wake_from_dimmed_onroad_brightness(_ui_state, evs) -> None:
-    if _ui_state.started and (_ui_state.onroad_brightness_timer_expired or _ui_state.onroad_brightness == OnroadBrightness.AUTO_DARK):
-      if any(ev.left_down for ev in evs):
-        if _ui_state.onroad_brightness_timer_expired:
-          gui_app.mouse_events.clear()
-        _ui_state.reset_onroad_sleep_timer()
+    expired = _ui_state.onroad_brightness_timer_expired
+    dimmed = expired or _ui_state.onroad_brightness == OnroadBrightness.AUTO_DARK
+    if not (_ui_state.started and dimmed):
+      return
+    if not any(ev.left_down for ev in evs):
+      return
+    if expired:
+      gui_app.mouse_events.clear()
+    _ui_state.reset_onroad_sleep_timer()
 
 
 class UIStatus(Enum):

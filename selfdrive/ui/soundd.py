@@ -45,26 +45,28 @@ sound_list_iq: dict[int, tuple[str, int | None, float]] = {
   AudibleAlertIQ.promptSingleHigh: ("prompt_single_high.wav", 1, MAX_VOLUME),
 }
 
-sound_list: dict[int, tuple[str, int | None, float]] = {
-  # AudibleAlert, file name, play count (none for infinite)
-  AudibleAlert.engage: ("engage.wav", 1, MAX_VOLUME),
-  AudibleAlert.disengage: ("disengage.wav", 1, MAX_VOLUME),
-  AudibleAlert.refuse: ("refuse.wav", 1, MAX_VOLUME),
-
-  AudibleAlert.prompt: ("prompt.wav", 1, MAX_VOLUME),
-  AudibleAlert.promptRepeat: ("prompt.wav", None, MAX_VOLUME),
-  AudibleAlert.promptDistracted: ("prompt_distracted.wav", None, MAX_VOLUME),
-
-  AudibleAlert.warningSoft: ("warning_soft.wav", None, MAX_VOLUME),
-  AudibleAlert.warningImmediate: ("warning_immediate.wav", None, MAX_VOLUME),
-
-  **sound_list_iq,
-}
-if HARDWARE.get_device_type() in ("tizi", "tici"):
-  sound_list.update({
+def get_sound_list(device_type: str) -> dict[int, tuple[str, int | None, float]]:
+  sounds = {
     AudibleAlert.engage: ("engage.wav", 1, MAX_VOLUME),
     AudibleAlert.disengage: ("disengage.wav", 1, MAX_VOLUME),
-  })
+    AudibleAlert.refuse: ("refuse.wav", 1, MAX_VOLUME),
+    AudibleAlert.prompt: ("prompt.wav", 1, MAX_VOLUME),
+    AudibleAlert.promptRepeat: ("prompt.wav", None, MAX_VOLUME),
+    AudibleAlert.promptDistracted: ("prompt_distracted.wav", None, MAX_VOLUME),
+    AudibleAlert.preAlert: ("pre_alert.wav", 1, MAX_VOLUME),
+    AudibleAlert.warningSoft: ("warning_soft.wav", None, MAX_VOLUME),
+    AudibleAlert.warningImmediate: ("warning_immediate.wav", None, MAX_VOLUME),
+    **sound_list_iq,
+  }
+  if device_type in ("tizi", "tici"):
+    sounds.update({
+      AudibleAlert.engage: ("engage.wav", 1, MAX_VOLUME),
+      AudibleAlert.disengage: ("disengage.wav", 1, MAX_VOLUME),
+    })
+  return sounds
+
+
+sound_list = get_sound_list(HARDWARE.get_device_type())
 
 def check_selfdrive_timeout_alert(sm):
   ss_missing = time.monotonic() - sm.recv_time['selfdriveState']

@@ -8,7 +8,7 @@ from pprint import pprint
 
 import cereal.messaging as messaging
 from cereal import car, log
-from opendbc.car.can_definitions import CanData
+from iqdbc.car.can_definitions import CanData
 from openpilot.common.utils import retry
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout

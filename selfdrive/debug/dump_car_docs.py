@@ -2,7 +2,7 @@
 import argparse
 import pickle
 
-from opendbc.car.docs import get_all_car_docs
+from iqdbc.car.docs import get_all_car_docs
 
 
 def dump_car_docs(path):

@@ -319,7 +319,6 @@ struct IQOnroadEvent @0xf4621d3ee9233bc9 {
 }
 
 struct IQCarParams @0xd4189b5c8aca9f78 {
-  # Data fields first (packed into the struct data section), pointer field last.
   # Ordinals are IQ-native; all consumers access by name. Live copies self-heal
   # via CLEAR_ON_MANAGER_START on the "IQCarParams" param; the persistent cache
   # is versioned separately (see IQCarParamsPersistentV2).
@@ -329,6 +328,7 @@ struct IQCarParams @0xd4189b5c8aca9f78 {
   enableGasInterceptor @3 :Bool;
 
   iqLateralNet @4 :LateralNet;
+  longitudinalStoppingSpeedOverride @5 :Float32;  # m/s; zero keeps the upstream default
 
   struct LateralNet {
     fuzzyFingerprint @0 :Bool;

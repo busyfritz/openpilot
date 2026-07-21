@@ -2,7 +2,7 @@
 import os
 import time
 
-from opendbc.car.structs import CarParams
+from iqdbc.car.structs import CarParams
 from panda import Panda
 
 

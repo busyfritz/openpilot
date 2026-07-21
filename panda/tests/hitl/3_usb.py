@@ -2,7 +2,7 @@ import time
 import pytest
 from flaky import flaky
 
-from opendbc.car.structs import CarParams
+from iqdbc.car.structs import CarParams
 from panda import Panda
 from panda.tests.hitl.helpers import time_many_sends
 

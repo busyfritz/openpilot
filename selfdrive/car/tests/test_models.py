@@ -9,15 +9,15 @@ import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
 from parameterized import parameterized_class
 
-from opendbc.car import DT_CTRL, gen_empty_fingerprint, structs
-from opendbc.car.can_definitions import CanData
-from opendbc.car.car_helpers import FRAME_FINGERPRINT, interfaces
-from opendbc.car.fingerprints import MIGRATION
-from opendbc.car.honda.values import CAR as HONDA, HondaFlags
-from opendbc.car.structs import car
-from opendbc.car.tests.routes import non_tested_cars, routes, CarTestRoute
-from opendbc.car.values import Platform, PLATFORMS
-from opendbc.safety.tests.libsafety import libsafety_py
+from iqdbc.car import DT_CTRL, gen_empty_fingerprint, structs
+from iqdbc.car.can_definitions import CanData
+from iqdbc.car.car_helpers import FRAME_FINGERPRINT, interfaces
+from iqdbc.car.fingerprints import MIGRATION
+from iqdbc.car.honda.values import CAR as HONDA, HondaFlags
+from iqdbc.car.structs import car
+from iqdbc.car.tests.routes import non_tested_cars, routes, CarTestRoute
+from iqdbc.car.values import Platform, PLATFORMS
+from iqdbc.safety.tests.libsafety import libsafety_py
 from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.pandad import can_capnp_to_list
 from openpilot.selfdrive.test.helpers import read_segment_list

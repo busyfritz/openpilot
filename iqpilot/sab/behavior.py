@@ -8,12 +8,12 @@ from dataclasses import dataclass
 from typing import Optional
 
 from openpilot.common.params import Params, UnknownKeyName
-from opendbc.car import structs
+from iqdbc.car import structs
 from openpilot.common.realtime import DT_CTRL
-from opendbc.safety import ALTERNATIVE_EXPERIENCE
+from iqdbc.safety import ALTERNATIVE_EXPERIENCE
 from openpilot.selfdrive.selfdrived.events import ET
-from opendbc.car.hyundai.values import HyundaiFlags
-from opendbc.iqpilot.car.hyundai.values import HyundaiFlagsIQ, HyundaiSafetyFlagsIQ
+from iqdbc.car.hyundai.values import HyundaiFlags
+from iqdbc.iqpilot.car.hyundai.values import HyundaiFlagsIQ, HyundaiSafetyFlagsIQ
 from openpilot.selfdrive.selfdrived.state import SOFT_DISABLE_TIME
 from cereal import log, custom
 

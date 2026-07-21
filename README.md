@@ -6,7 +6,7 @@
 
 ## Running IQ.Pilot
 * A modern comma, or clone device to run this software (Comma 3, 3x, 4, Konik A1/M, Mr.One C3, C3 Lite)
-* One of [the supported cars](https://gitlvb.teallvbs.xyz/IQ.Lvbs/IQ.Pilot/src/branch/release/opendbc_repo/docs/CARS.md).
+* One of [the supported cars](https://gitlvb.teallvbs.xyz/IQ.Lvbs/IQ.Pilot/src/branch/release/iqdbc_repo/docs/CARS.md).
 * A [car harness](https://comma.ai/shop/products/car-harness) to connect to your car
 #### Side Note: Volkswagen Group, and Tesla vehicles are currently the most compatible for use with IQ.Pilot, other manufacturers are supported at a minimum to the same level as stock openpilot, but are not a top priority while we are in beta.
 ## Installation

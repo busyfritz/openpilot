@@ -48,8 +48,8 @@ class Plant:
     time.sleep(0.1)
     self.sm = messaging.SubMaster(['longitudinalPlan'])
 
-    from opendbc.car.honda.values import CAR
-    from opendbc.car.honda.interface import CarInterface
+    from iqdbc.car.honda.values import CAR
+    from iqdbc.car.honda.interface import CarInterface
 
     CP = CarInterface.get_non_essential_params(CAR.HONDA_CIVIC)
     CP_IQ = CarInterface.get_non_essential_params_iq(CP, CAR.HONDA_CIVIC)
@@ -70,6 +70,7 @@ class Plant:
     car_control = messaging.new_message('carControl')
     model = messaging.new_message('modelV2')
     iq_car_state = messaging.new_message('iqCarState')
+    iq_nav_state = messaging.new_message('iqNavState')
     live_map_data_iq = messaging.new_message('iqLiveData')
     gps_data = messaging.new_message('gpsLocation')
     a_lead = (v_lead - self.v_lead_prev)/self.ts
@@ -112,7 +113,7 @@ class Plant:
     position = log.XYZTData.new_message()
     position.x = [float(x) for x in (self.speed + 0.5) * np.array(ModelConstants.T_IDXS)]
     model.modelV2.position = position
-    model.modelV2.action.desiredAcceleration = float(self.acceleration + 0.1)
+    model.modelV2.action.desiredAcceleration = float(self.acceleration + 0.5)
     velocity = log.XYZTData.new_message()
     velocity.x = [float(x) for x in (self.speed + 0.5) * np.ones_like(ModelConstants.T_IDXS)]
     velocity.x[0] = float(self.speed) # always start at current speed
@@ -140,6 +141,7 @@ class Plant:
           'liveParameters': lp.liveParameters,
           'modelV2': model.modelV2,
           'iqCarState': iq_car_state.iqCarState,
+          'iqNavState': iq_nav_state.iqNavState,
           'iqLiveData': live_map_data_iq.iqLiveData,
           'gpsLocation': gps_data.gpsLocation}
     self.planner.update(sm)

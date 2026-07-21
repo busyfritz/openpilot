@@ -11,16 +11,13 @@ CONTROL_N_T_IDX = ModelConstants.T_IDXS[:CONTROL_N]
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
 
-def long_control_state_trans(CP, CP_IQ, active, long_control_state, v_ego,
-                             should_stop, brake_pressed, cruise_standstill):
+def long_control_state_trans(CP_IQ, active, long_control_state, should_stop, brake_pressed, cruise_standstill):
   # Gas Interceptor
   cruise_standstill = cruise_standstill and not CP_IQ.enableGasInterceptor
 
-  stopping_condition = should_stop
   starting_condition = (not should_stop and
                         not cruise_standstill and
                         not brake_pressed)
-  started_condition = v_ego > CP.vEgoStarting
 
   if not active:
     long_control_state = LongCtrlState.off
@@ -30,22 +27,15 @@ def long_control_state_trans(CP, CP_IQ, active, long_control_state, v_ego,
       if not starting_condition:
         long_control_state = LongCtrlState.stopping
       else:
-        if starting_condition and CP.startingState:
-          long_control_state = LongCtrlState.starting
-        else:
-          long_control_state = LongCtrlState.pid
+        long_control_state = LongCtrlState.pid
 
     elif long_control_state == LongCtrlState.stopping:
-      if starting_condition and CP.startingState:
-        long_control_state = LongCtrlState.starting
-      elif starting_condition:
+      if starting_condition:
         long_control_state = LongCtrlState.pid
 
-    elif long_control_state in [LongCtrlState.starting, LongCtrlState.pid]:
-      if stopping_condition:
+    elif long_control_state == LongCtrlState.pid:
+      if should_stop:
         long_control_state = LongCtrlState.stopping
-      elif started_condition:
-        long_control_state = LongCtrlState.pid
   return long_control_state
 
 class LongControl:
@@ -73,8 +63,7 @@ class LongControl:
     else:
       stop_now = should_stop
 
-    self.long_control_state = long_control_state_trans(self.CP, self.CP_IQ, active, self.long_control_state, CS.vEgo,
-                                                       stop_now, CS.brakePressed,
+    self.long_control_state = long_control_state_trans(self.CP_IQ, active, self.long_control_state, stop_now, CS.brakePressed,
                                                        CS.cruiseState.standstill)
     if self.long_control_state == LongCtrlState.off:
       self.reset()
@@ -85,12 +74,8 @@ class LongControl:
       output_accel = self.last_output_accel
       if output_accel > self.CP.stopAccel:
         output_accel = min(output_accel, 0.0)
-        output_accel -= self.CP.stoppingDecelRate * DT_CTRL
-      self.reset()
-      self.smooth.reset()
-
-    elif self.long_control_state == LongCtrlState.starting:
-      output_accel = self.CP.startAccel
+        # TODO: can we just go straight to stopAccel?
+        output_accel -= 1.0 * DT_CTRL  # m/s^2/s while trying to stop
       self.reset()
       self.smooth.reset()
 

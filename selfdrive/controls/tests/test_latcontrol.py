@@ -1,12 +1,12 @@
 from parameterized import parameterized
 
 from cereal import car, log
-from opendbc.car.car_helpers import interfaces
-from opendbc.car.honda.values import CAR as HONDA
-from opendbc.car.toyota.values import CAR as TOYOTA
-from opendbc.car.nissan.values import CAR as NISSAN
-from opendbc.car.gm.values import CAR as GM
-from opendbc.car.vehicle_model import VehicleModel
+from iqdbc.car.car_helpers import interfaces
+from iqdbc.car.honda.values import CAR as HONDA
+from iqdbc.car.toyota.values import CAR as TOYOTA
+from iqdbc.car.nissan.values import CAR as NISSAN
+from iqdbc.car.gm.values import CAR as GM
+from iqdbc.car.vehicle_model import VehicleModel
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car.helpers import convert_to_capnp
 from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID

@@ -174,7 +174,6 @@ procs = [
   PythonProcess("tombstoned", "system.tombstoned", always_run, enabled=not PC),
   PythonProcess("updated", "system.updated.updated", and_(only_offroad, not_low_power), enabled=not PC),
   BundleProcess("iquploaderd", "iqpilot_hephaestusd_private", "iqpilot_private.konn3kt.uploaderd.iquploaderd", and_(iquploaderd_ready, not_low_power), restart_if_crash=True),
-  PythonProcess("statsd", "system.statsd", always_run),
   PythonProcess("feedbackd", "selfdrive.ui.feedback.feedbackd", and_(only_onroad, not_lat_maneuver)),
 
   # debug procs

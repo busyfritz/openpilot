@@ -11,8 +11,8 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, lock_memory, DT_CTRL, Priority, Ratekeeper
 from openpilot.common.swaglog import cloudlog
 
-from opendbc.car.car_helpers import interfaces
-from opendbc.car.vehicle_model import VehicleModel
+from iqdbc.car.car_helpers import interfaces
+from iqdbc.car.vehicle_model import VehicleModel
 from openpilot.selfdrive.controls.lib.drive_helpers import clip_curvature
 from openpilot.selfdrive.controls.lib.latcontrol import LatControl
 from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
@@ -99,7 +99,7 @@ class Controls(IQControlsLayer):
     try:
       if self.CP.brand != 'volkswagen':
         return False
-      from opendbc.car.volkswagen.values import VolkswagenFlags
+      from iqdbc.car.volkswagen.values import VolkswagenFlags
       return bool(self.CP.flags & VolkswagenFlags.PQ)
     except Exception:
       cloudlog.exception("pq torque selection failed; using generic torque")
@@ -260,7 +260,7 @@ class Controls(IQControlsLayer):
       hudControl.leadFollowTime = 1.45
     hudControl.visualAlert = self.sm['selfdriveState'].alertHudVisual
     hudControl.audibleAlert = self.sm['selfdriveState'].alertSound
-    hudControl.driverUnresponsive = self.sm['selfdriveState'].alertType.split('/', 1)[0] == 'driverUnresponsive'
+    hudControl.driverUnresponsive = self.sm['driverMonitoringState'].noResponseForceDecel
 
     hudControl.rightLaneVisible = True
     hudControl.leftLaneVisible = True
@@ -292,7 +292,7 @@ class Controls(IQControlsLayer):
     cs.upAccelCmd = float(self.LoC.pid.p)
     cs.uiAccelCmd = float(self.LoC.pid.i)
     cs.ufAccelCmd = float(self.LoC.pid.f)
-    cs.forceDecel = bool((self.sm['driverMonitoringState'].awarenessStatus < 0.) or
+    cs.forceDecel = bool(self.sm['driverMonitoringState'].noResponseForceDecel or
                          (self.sm['selfdriveState'].state == State.softDisabling))
 
     lat_tuning = self.CP.lateralTuning.which()

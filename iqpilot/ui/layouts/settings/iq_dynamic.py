@@ -13,7 +13,7 @@ from openpilot.system.ui.iqpilot.widgets.list_view import OptionControl
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.network import NavButton
 from openpilot.system.ui.widgets.scroller_tici import Scroller
-from opendbc.car.volkswagen.values import CAR, VolkswagenFlags
+from iqdbc.car.volkswagen.values import CAR, VolkswagenFlags
 
 
 def _toggle_item(title: str, description: str, param: str) -> IQListItem:

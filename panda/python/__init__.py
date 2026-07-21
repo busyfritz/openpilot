@@ -9,7 +9,7 @@ import binascii
 from functools import wraps, partial
 from itertools import accumulate
 
-from opendbc.car.structs import CarParams
+from iqdbc.car.structs import CarParams
 
 from .base import BaseHandle
 from .constants import FW_PATH, McuType

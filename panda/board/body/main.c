@@ -9,7 +9,7 @@
 #include "board/obj/gitversion.h"
 #include "board/body/motor_control.h"
 #include "board/body/can.h"
-#include "opendbc/safety/safety.h"
+#include "iqdbc/safety/safety.h"
 #include "board/drivers/can_common.h"
 #include "board/drivers/fdcan.h"
 #include "board/can_comms.h"

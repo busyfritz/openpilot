@@ -5,8 +5,8 @@ Copyright © IQ.Lvbs, apart of Project Teal Lvbs, All Rights Reserved, licensed 
 from types import SimpleNamespace
 
 from cereal import custom
-from opendbc.car import structs
-from opendbc.car.hyundai.values import HyundaiFlags
+from iqdbc.car import structs
+from iqdbc.car.hyundai.values import HyundaiFlags
 from openpilot.iqpilot.sab.behavior import SteeringAssistanceBehavior
 from openpilot.iqpilot.selfdrive.selfdrived.events import IQEvents
 from openpilot.selfdrive.selfdrived.events import Events

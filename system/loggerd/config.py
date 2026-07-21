@@ -5,9 +5,6 @@ from openpilot.system.hardware.hw import Paths
 CAMERA_FPS = 20
 SEGMENT_LENGTH = 60
 
-STATS_DIR_FILE_LIMIT = 10000
-STATS_SOCKET = "ipc:///tmp/stats"
-STATS_FLUSH_TIME_S = 60
 
 PATH_DICT = {
   "internal": Paths.log_root(),

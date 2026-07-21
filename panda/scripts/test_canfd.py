@@ -3,7 +3,7 @@ import os
 import time
 import random
 from collections import defaultdict
-from opendbc.car.structs import CarParams
+from iqdbc.car.structs import CarParams
 from panda import Panda, calculate_checksum, DLC_TO_LEN
 from panda import PandaJungle
 from panda.tests.hitl.helpers import time_many_sends

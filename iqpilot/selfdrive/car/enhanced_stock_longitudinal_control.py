@@ -6,7 +6,7 @@ from __future__ import annotations
 from openpilot.common.constants import CV
 from openpilot.selfdrive.car.cruise import V_CRUISE_MAX
 
-from opendbc.car import structs
+from iqdbc.car import structs
 
 ENHANCED_STOCK_LONGITUDINAL_CONTROL_SET_SPEED_KPH_KEY = "enhancedStockLongitudinalControl.setSpeedKph"
 

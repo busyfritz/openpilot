@@ -3,10 +3,10 @@
 import argparse
 import struct
 from enum import IntEnum
-from opendbc.car.carlog import carlog
-from opendbc.car.uds import UdsClient, MessageTimeoutError, NegativeResponseError, SESSION_TYPE,\
+from iqdbc.car.carlog import carlog
+from iqdbc.car.uds import UdsClient, MessageTimeoutError, NegativeResponseError, SESSION_TYPE,\
   DATA_IDENTIFIER_TYPE, ACCESS_TYPE
-from opendbc.car.structs import CarParams
+from iqdbc.car.structs import CarParams
 from panda import Panda
 from datetime import date
 

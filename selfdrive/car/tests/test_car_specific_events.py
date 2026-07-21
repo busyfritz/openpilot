@@ -1,7 +1,7 @@
 from types import SimpleNamespace
 
 from cereal import log
-from opendbc.car import structs
+from iqdbc.car import structs
 
 from openpilot.selfdrive.car.car_specific import CarSpecificEvents
 

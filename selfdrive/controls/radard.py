@@ -12,9 +12,9 @@ from openpilot.common.realtime import DT_MDL, Priority, config_realtime_process
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.simple_kalman import KF1D
 
-from opendbc.car import structs
-from opendbc.car.hyundai.values import HyundaiFlags
-from opendbc.iqpilot.car.hyundai.values import HyundaiFlagsIQ
+from iqdbc.car import structs
+from iqdbc.car.hyundai.values import HyundaiFlags
+from iqdbc.iqpilot.car.hyundai.values import HyundaiFlagsIQ
 from openpilot.iqpilot.selfdrive.controls.lib.custom_stop_distance import CustomStopDistance
 
 

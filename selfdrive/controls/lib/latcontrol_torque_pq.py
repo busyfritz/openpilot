@@ -3,7 +3,7 @@ import numpy as np
 from collections import deque
 
 from cereal import log
-from opendbc.car.lateral import get_friction
+from iqdbc.car.lateral import get_friction
 from openpilot.common.constants import ACCELERATION_DUE_TO_GRAVITY
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.controls.lib.latcontrol import LatControl

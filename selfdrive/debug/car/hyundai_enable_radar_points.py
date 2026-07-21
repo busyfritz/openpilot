@@ -16,9 +16,9 @@ import argparse
 from typing import NamedTuple
 from subprocess import check_output, CalledProcessError
 
-from opendbc.car.carlog import carlog
-from opendbc.car.uds import UdsClient, SESSION_TYPE, DATA_IDENTIFIER_TYPE
-from opendbc.car.structs import CarParams
+from iqdbc.car.carlog import carlog
+from iqdbc.car.uds import UdsClient, SESSION_TYPE, DATA_IDENTIFIER_TYPE
+from iqdbc.car.structs import CarParams
 from panda.python import Panda
 
 class ConfigValues(NamedTuple):

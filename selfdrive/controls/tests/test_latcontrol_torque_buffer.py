@@ -1,9 +1,9 @@
 from parameterized import parameterized
 
 from cereal import car, log
-from opendbc.car.car_helpers import interfaces
-from opendbc.car.toyota.values import CAR as TOYOTA
-from opendbc.car.vehicle_model import VehicleModel
+from iqdbc.car.car_helpers import interfaces
+from iqdbc.car.toyota.values import CAR as TOYOTA
+from iqdbc.car.vehicle_model import VehicleModel
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque, LAT_ACCEL_REQUEST_BUFFER_SECONDS
 

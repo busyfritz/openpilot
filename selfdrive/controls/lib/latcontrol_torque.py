@@ -8,10 +8,10 @@ from difflib import SequenceMatcher
 import numpy as np
 
 from cereal import log, custom  # noqa: F401  (custom kept available for downstream imports)
-from opendbc.car import structs
-from opendbc.car.lateral import FRICTION_THRESHOLD, get_friction
-from opendbc.iqpilot.car.interfaces import LatControlInputs
-from opendbc.iqpilot.car.lateral_ext import get_friction as get_friction_in_torque_space
+from iqdbc.car import structs
+from iqdbc.car.lateral import FRICTION_THRESHOLD, get_friction
+from iqdbc.iqpilot.car.interfaces import LatControlInputs
+from iqdbc.iqpilot.car.lateral_ext import get_friction as get_friction_in_torque_space
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.constants import ACCELERATION_DUE_TO_GRAVITY
 from openpilot.common.filter_simple import FirstOrderFilter
@@ -27,7 +27,7 @@ from openpilot.iqpilot.selfdrive.controls.lib.helpers.nav_torque_pulse import Na
 # ===== locator =====
 
 TORQUE_NN_MODEL_PATH = os.path.join(BASEDIR, "iqpilot", "iqpilot_iq_nnff_models", "neural_network_lateral_control")
-TORQUE_NN_MODEL_SUBSTITUTE_PATH = os.path.join(BASEDIR, "opendbc", "car", "torque_data", "substitute.toml")
+TORQUE_NN_MODEL_SUBSTITUTE_PATH = os.path.join(BASEDIR, "iqdbc", "car", "torque_data", "substitute.toml")
 MOCK_MODEL_PATH = os.path.join(TORQUE_NN_MODEL_PATH, "MOCK.json")
 
 # A candidate must reach this score for the fingerprint(+fw) match to count as exact.

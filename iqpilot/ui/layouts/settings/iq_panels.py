@@ -92,9 +92,9 @@ from openpilot.selfdrive.ui.layouts.settings.device import DeviceLayout
 from openpilot.selfdrive.ui.layouts.settings.software import SoftwareLayout, time_ago
 
 from functools import partial
-from opendbc.car.hyundai.values import CAR, CANFD_UNSUPPORTED_LONGITUDINAL_CAR, UNSUPPORTED_LONGITUDINAL_CAR
-from opendbc.car.subaru.values import CAR, SubaruFlags
-from opendbc.car.volkswagen.values import CAR, VolkswagenFlags
+from iqdbc.car.hyundai.values import CAR, CANFD_UNSUPPORTED_LONGITUDINAL_CAR, UNSUPPORTED_LONGITUDINAL_CAR
+from iqdbc.car.subaru.values import CAR, SubaruFlags
+from iqdbc.car.volkswagen.values import CAR, VolkswagenFlags
 from openpilot.common.basedir import BASEDIR
 from openpilot.system.ui.iqpilot.lib.styles import ink
 from openpilot.system.ui.iqpilot.widgets.list_view import multiple_button_item
@@ -1365,20 +1365,9 @@ class IQSoftwareLayout(SoftwareLayout):
 
 # ===== device =====
 
-offroad_time_options = {
-  0: 0,
-  1: 5,
-  2: 10,
-  3: 15,
-  4: 30,
-  5: 60,
-  6: 120,
-  7: 180,
-  8: 300,
-  9: 600,
-  10: 1440,
-  11: 1800,
-}
+# minutes the device may sit offroad before auto-shutdown, indexed by slider step
+_OFFROAD_SHUTDOWN_MINUTES = (0, 5, 10, 15, 30, 60, 120, 180, 300, 600, 1440, 1800)
+offroad_time_options = dict(enumerate(_OFFROAD_SHUTDOWN_MINUTES))
 
 FORCE_ONROAD_DURATION_SEC = 10 * 60
 FORCE_ONROAD_PARAM = "ForceOnroadUntil"
@@ -1398,20 +1387,8 @@ class IQDeviceLayout(DeviceLayout):
     DeviceLayout._initialize_items(self)
 
     # Using dual button with no right button for better alignment
-    self._always_offroad_btn = dual_button_item(
-      left_text=lambda: tr("Enable Always Offroad"),
-      left_callback=self._handle_always_offroad,
-      right_text="",
-      right_callback=None,
-    )
-    self._always_offroad_btn.action_item.right_button.set_visible(False)
-    self._force_onroad_btn = dual_button_item(
-      left_text=lambda: tr("Force On-Road (10 min)"),
-      left_callback=self._handle_force_onroad,
-      right_text="",
-      right_callback=None,
-    )
-    self._force_onroad_btn.action_item.right_button.set_visible(False)
+    self._always_offroad_btn = self._left_button(lambda: tr("Enable Always Offroad"), self._handle_always_offroad)
+    self._force_onroad_btn = self._left_button(lambda: tr("Force On-Road (10 min)"), self._handle_force_onroad)
 
     self._max_time_offroad = option_item(
       title=lambda: tr("Max Time Offroad"),
@@ -1467,31 +1444,9 @@ class IQDeviceLayout(DeviceLayout):
       right_callback=self._power_off_prompt
     )
 
-    self._submenu_system_btn = dual_button_item(
-      left_text=lambda: tr("System"),
-      left_callback=lambda: self._set_submenu(self.MENU_SYSTEM),
-      right_text="",
-      right_callback=None,
-    )
-    self._submenu_system_btn.action_item.right_button.set_visible(False)
-    self._submenu_system_btn.action_item.left_button = NavSectionButton(
-      lambda: tr("System"), "icons/iq/sec_system.png", lambda: self._set_submenu(self.MENU_SYSTEM))
-    self._submenu_maintenance_btn = dual_button_item(
-      left_text=lambda: tr("Maintenance"),
-      left_callback=lambda: self._set_submenu(self.MENU_MAINTENANCE),
-      right_text="",
-      right_callback=None,
-    )
-    self._submenu_maintenance_btn.action_item.right_button.set_visible(False)
-    self._submenu_maintenance_btn.action_item.left_button = NavSectionButton(
-      lambda: tr("Maintenance"), "icons/iq/sec_maintenance.png", lambda: self._set_submenu(self.MENU_MAINTENANCE))
-    self._submenu_back_btn = dual_button_item(
-      left_text=lambda: tr("Back"),
-      left_callback=self._go_back,
-      right_text="",
-      right_callback=None,
-    )
-    self._submenu_back_btn.action_item.right_button.set_visible(False)
+    self._submenu_system_btn = self._section_button(lambda: tr("System"), "icons/iq/sec_system.png", self.MENU_SYSTEM)
+    self._submenu_maintenance_btn = self._section_button(lambda: tr("Maintenance"), "icons/iq/sec_maintenance.png", self.MENU_MAINTENANCE)
+    self._submenu_back_btn = self._left_button(lambda: tr("Back"), self._go_back)
 
     self._submenu_top_separator = LineSeparator(height=10)
     self._submenu_gap = Spacer(10)
@@ -1526,6 +1481,16 @@ class IQDeviceLayout(DeviceLayout):
     ]
 
     return items
+
+  def _left_button(self, text, callback):
+    item = dual_button_item(left_text=text, left_callback=callback, right_text="", right_callback=None)
+    item.action_item.right_button.set_visible(False)
+    return item
+
+  def _section_button(self, text, icon, submenu):
+    item = self._left_button(text, lambda: self._set_submenu(submenu))
+    item.action_item.left_button = NavSectionButton(text, icon, lambda: self._set_submenu(submenu))
+    return item
 
   def _set_submenu(self, submenu: int):
     self._submenu = submenu
@@ -1920,25 +1885,30 @@ class ModelsLayout(Widget):
     DS = custom.IQModelManager.DownloadStatus
     bundle_downloading = bundle.status == DS.downloading
     for model in bundle.models:
-      if label := labels.get(getattr(model.type, 'raw', model.type)):
-        label.set_visible(True)
-        p = model.artifact.downloadProgress
-        text, show, color, indeterminate = f"pending - {bundle.displayName}", False, rl.GRAY, False
-        # Show a live bar whenever the bundle is downloading — not only when this artifact's own
-        # status flips to `downloading`. RL/supercombo weights are served without a content-length,
-        # so their per-artifact status/progress never updates and they used to sit on "pending".
-        if p.status == DS.downloading or (bundle_downloading and p.status not in (DS.downloaded, DS.cached, DS.failed)):
-          show = True
-          if p.progress > 0:
-            text = f"{int(p.progress)}% - {bundle.displayName}"
-          else:
-            text, indeterminate = f"{tr('downloading')} - {bundle.displayName}", True
-        elif p.status in (DS.downloaded, DS.cached):
-          status_text = tr("from cache" if p.status == DS.cached else "downloaded")
-          text, color = f"{bundle.displayName} - {status_text if status_changed else tr('ready')}", ON_COLOR
-        elif p.status == DS.failed:
-          text, color = f"download failed - {bundle.displayName}", rl.RED
-        label.action_item.update(p.progress, text, show, color, indeterminate=indeterminate)
+      label = labels.get(getattr(model.type, 'raw', model.type))
+      if label is None:
+        continue
+      label.set_visible(True)
+      p = model.artifact.downloadProgress
+      text, show, color, indeterminate = self._model_label_state(p, bundle, bundle_downloading, status_changed)
+      label.action_item.update(p.progress, text, show, color, indeterminate=indeterminate)
+
+  def _model_label_state(self, p, bundle, bundle_downloading, status_changed):
+    # RL/supercombo weights are served without a content-length, so their per-artifact
+    # progress never updates; show a live bar whenever the bundle itself is downloading.
+    DS = custom.IQModelManager.DownloadStatus
+    name = bundle.displayName
+    live = p.status == DS.downloading or (bundle_downloading and p.status not in (DS.downloaded, DS.cached, DS.failed))
+    if live:
+      if p.progress > 0:
+        return f"{int(p.progress)}% - {name}", True, rl.GRAY, False
+      return f"{tr('downloading')} - {name}", True, rl.GRAY, True
+    if p.status in (DS.downloaded, DS.cached):
+      status_text = tr("from cache" if p.status == DS.cached else "downloaded")
+      return f"{name} - {status_text if status_changed else tr('ready')}", False, ON_COLOR, False
+    if p.status == DS.failed:
+      return f"download failed - {name}", False, rl.RED, False
+    return f"pending - {name}", False, rl.GRAY, False
 
   @staticmethod
   def _show_reset_params_dialog():

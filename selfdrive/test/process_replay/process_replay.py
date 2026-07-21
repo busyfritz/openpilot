@@ -17,8 +17,8 @@ import cereal.messaging as messaging
 from cereal import car
 from cereal.services import SERVICE_LIST
 from msgq.visionipc import VisionIpcServer, get_endpoint_name as vipc_get_endpoint_name
-from opendbc.car.can_definitions import CanData
-from opendbc.car.car_helpers import get_car, interfaces
+from iqdbc.car.can_definitions import CanData
+from iqdbc.car.car_helpers import get_car, interfaces
 from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.common.timeout import Timeout

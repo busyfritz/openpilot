@@ -23,7 +23,7 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.iqpilot.lib import canvas
-from opendbc.car.volkswagen.values import VolkswagenFlags
+from iqdbc.car.volkswagen.values import VolkswagenFlags
 
 
 # --- shared state access -----------------------------------------------------

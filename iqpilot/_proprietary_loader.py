@@ -291,7 +291,7 @@ def _iter_repo_roots() -> list[Path]:
     if parent in seen:
       continue
 
-    if (parent / "konn3kt_private").exists() or (parent / "iqpilot" / "models_private_src").exists() or (parent / "opendbc_repo").exists():
+    if (parent / "konn3kt_private").exists() or (parent / "iqpilot" / "models_private_src").exists() or (parent / "iqdbc_repo").exists():
       roots.append(parent)
       seen.add(parent)
 
