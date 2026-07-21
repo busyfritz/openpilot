@@ -34,6 +34,10 @@ TEMP_TAU = 5.   # 5s time constant
 DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect so you get an alert
 PANDA_STATES_TIMEOUT = round(1000 / SERVICE_LIST['pandaStates'].frequency * 1.5)  # 1.5x the expected pandaState frequency
 ONROAD_CYCLE_TIME = 1  # seconds to wait offroad after requesting an onroad cycle
+CAN_STARTUP_RECOVERY_DELAY = 3.  # require a persistent CAN timeout before cycling onroad processes
+CAN_STARTUP_RECOVERY_WINDOW = 30.  # only recover shortly after ignition turns on
+CAN_STARTUP_RECOVERY_COOLDOWN = 5.  # allow the restarted car stack time to initialize
+CAN_STARTUP_RECOVERY_MAX_ATTEMPTS = 2
 
 ThermalBand = namedtuple("ThermalBand", ['min_temp', 'max_temp'])
 HardwareState = namedtuple("HardwareState", ['network_type', 'network_info', 'network_strength', 'network_stats',
@@ -53,6 +57,54 @@ OFFROAD_DANGER_TEMP = 75
 
 prev_offroad_states: dict[str, tuple[bool, str | None]] = {}
 ALLOWED_TICI_BRANCHES = {"release-new", "release-tici", "master-mici", "beta", "beta-pq", "release-prebuilt"}
+
+
+class CanStartupRecovery:
+  """Bounded recovery for a car stack that starts without a usable CAN stream."""
+
+  def __init__(self) -> None:
+    self.ignition_on_ts: float | None = None
+    self.timeout_started_ts: float | None = None
+    self.last_attempt_ts: float | None = None
+    self.attempts = 0
+
+  def update(self, now: float, ignition: bool, started: bool, engaged: bool,
+             car_state_alive: bool, can_timeout: bool, v_ego: float) -> bool:
+    if not ignition:
+      self.ignition_on_ts = None
+      self.timeout_started_ts = None
+      self.last_attempt_ts = None
+      self.attempts = 0
+      return False
+
+    if self.ignition_on_ts is None:
+      self.ignition_on_ts = now
+
+    eligible = (
+      started
+      and not engaged
+      and car_state_alive
+      and can_timeout
+      and abs(v_ego) < 0.1
+      and (now - self.ignition_on_ts) <= CAN_STARTUP_RECOVERY_WINDOW
+      and self.attempts < CAN_STARTUP_RECOVERY_MAX_ATTEMPTS
+      and (self.last_attempt_ts is None or (now - self.last_attempt_ts) >= CAN_STARTUP_RECOVERY_COOLDOWN)
+    )
+    if not eligible:
+      self.timeout_started_ts = None
+      return False
+
+    if self.timeout_started_ts is None:
+      self.timeout_started_ts = now
+      return False
+
+    if (now - self.timeout_started_ts) < CAN_STARTUP_RECOVERY_DELAY:
+      return False
+
+    self.attempts += 1
+    self.last_attempt_ts = now
+    self.timeout_started_ts = None
+    return True
 
 
 def get_top_memory_processes(limit: int = 5) -> list[dict[str, object]]:
@@ -212,7 +264,7 @@ def hw_state_thread(end_event, hw_queue):
 
 def hardware_thread(end_event, hw_queue) -> None:
   pm = messaging.PubMaster(['deviceState', 'iqPerfTrace'])
-  sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "selfdriveState", "pandaStates"], poll="pandaStates")
+  sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "selfdriveState", "pandaStates", "carState"], poll="pandaStates")
   perf = PerfTraceEmitter("hardwared", pubmaster=pm)
 
   count = 0
@@ -250,6 +302,7 @@ def hardware_thread(end_event, hw_queue) -> None:
   low_power = False
   low_power_prev = False
   offroad_cycle_count = 0
+  can_startup_recovery = CanStartupRecovery()
 
   params = Params()
   power_monitor = PowerMonitoring()
@@ -274,6 +327,19 @@ def hardware_thread(end_event, hw_queue) -> None:
     if params.get_bool("OnroadCycleRequested"):
       params.put_bool("OnroadCycleRequested", False)
       offroad_cycle_count = sm.frame
+
+    car_state = sm['carState']
+    if can_startup_recovery.update(
+      time.monotonic(),
+      ignition=onroad_conditions["ignition"],
+      started=started_ts is not None,
+      engaged=sm['selfdriveState'].enabled,
+      car_state_alive=sm.alive['carState'],
+      can_timeout=car_state.canTimeout,
+      v_ego=car_state.vEgo,
+    ):
+      offroad_cycle_count = sm.frame
+      cloudlog.event("automatic CAN startup recovery", attempt=can_startup_recovery.attempts, error=True)
     onroad_conditions["not_onroad_cycle"] = (sm.frame - offroad_cycle_count) >= ONROAD_CYCLE_TIME * SERVICE_LIST['pandaStates'].frequency
 
     if sm.updated['pandaStates'] and len(pandaStates) > 0:
