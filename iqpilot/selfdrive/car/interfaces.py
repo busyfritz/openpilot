@@ -69,7 +69,7 @@ def _cleanup_unsupported_params(cp, cp_iq, store=None) -> None:
   set_speed_limit_controller_availability(cp, cp_iq, store)
 
 
-def setup_interfaces(ci, store=None) -> None:
+def apply_iq_car_config(ci, store=None) -> None:
   store = store or _Store()
   if _stamp_lateral_model(ci.CP, ci.CP_IQ, store):
     ci.configure_torque_tune(ci.CP.carFingerprint, ci.CP.lateralTuning)

@@ -10,8 +10,8 @@ from openpilot.system.ui.widgets import DialogResult
 from openpilot.selfdrive.ui.ui_state import ui_state
 
 if gui_app.iqpilot_ui():
-  from openpilot.system.ui.iqpilot.widgets.list_view import toggle_item
-  from openpilot.system.ui.iqpilot.widgets.list_view import multiple_button_item
+  from openpilot.system.ui.iqwidgets.widgets.list_view import toggle_item
+  from openpilot.system.ui.iqwidgets.widgets.list_view import multiple_button_item
   from openpilot.iqpilot.ui.layouts.settings.iq_dynamic import IQDynamicLayout
 
 PERSONALITY_TO_INT = log.LongitudinalPersonality.schema.enumerants

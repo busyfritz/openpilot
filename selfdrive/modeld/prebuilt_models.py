@@ -11,7 +11,7 @@ BASEDIR = MODELD_DIR.parents[1]
 TINYGRAD_DIR = BASEDIR / 'tinygrad_repo'
 METADATA_SCRIPT = MODELD_DIR / 'get_model_metadata.py'
 
-MODEL_NAMES = ['dmonitoring_model']
+MODEL_NAMES = ['dmonitoring_model', 'dmonitoring_model_mici']
 
 
 def _hash_file(h, path: Path) -> None:
@@ -77,7 +77,13 @@ def outputs_match(model_name: str) -> bool:
   return True
 
 
+def packaged_prebuilt_matches(model_name: str) -> bool:
+  return not (MODELS_DIR / f'{model_name}.onnx').is_file() and outputs_match(model_name)
+
+
 def verify_prebuilt(model_name: str, flags: str) -> bool:
+  if not (MODELS_DIR / f'{model_name}.onnx').is_file():
+    return False
   data = _load_checks().get(model_name, {})
   if data.get('signature') != compute_signature(model_name, flags):
     return False

@@ -11,7 +11,7 @@ from iqdbc.car.mock.values import CAR as MOCK
 from iqdbc.car.values import BRANDS
 from iqdbc.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
 
-from iqdbc.iqpilot.car.interfaces import setup_interfaces as iqpilot_interfaces
+from iqdbc.lvbs.car.interfaces import apply_iq_car_config as iqpilot_interfaces
 
 FRAME_FINGERPRINT = 100  # 1s
 

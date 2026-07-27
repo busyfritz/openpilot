@@ -10,7 +10,7 @@ from iqdbc.car.honda.values import CAR, DBC, STEER_THRESHOLD, HONDA_BOSCH, HONDA
                                                  HondaFlags, CruiseButtons, CruiseSettings, GearShifter, CarControllerParams
 from iqdbc.car.interfaces import CarStateBase
 
-from iqdbc.iqpilot.car.honda.carstate_ext import CarStateExt
+from iqdbc.lvbs.car.honda.iq_carstate import IQCarState
 
 TransmissionType = structs.CarParams.TransmissionType
 ButtonType = structs.CarState.ButtonEvent.Type
@@ -20,10 +20,10 @@ BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.D
 SETTINGS_BUTTONS_DICT = {CruiseSettings.DISTANCE: ButtonType.gapAdjustCruise, CruiseSettings.LKAS: ButtonType.lkas}
 
 
-class CarState(CarStateBase, CarStateExt):
+class CarState(CarStateBase, IQCarState):
   def __init__(self, CP, CP_IQ):
     CarStateBase.__init__(self, CP, CP_IQ)
-    CarStateExt.__init__(self, CP, CP_IQ)
+    IQCarState.__init__(self, CP, CP_IQ)
     can_define = CANDefine(DBC[CP.carFingerprint][Bus.pt])
 
     if CP.transmissionType != TransmissionType.manual:
@@ -246,7 +246,7 @@ class CarState(CarStateBase, CarStateExt):
       *create_button_events(self.cruise_setting, prev_cruise_setting, SETTINGS_BUTTONS_DICT),
     ]
 
-    CarStateExt.update(self, ret, can_parsers)
+    IQCarState.update(self, ret, can_parsers)
 
     return ret, ret_iq
 

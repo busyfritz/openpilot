@@ -13,8 +13,8 @@ from iqdbc.car.toyota.values import CAR, NO_STOP_TIMER_CAR, TSS2_CAR, \
                                         UNSUPPORTED_DSU_CAR
 from iqdbc.can import CANPacker
 
-from iqdbc.iqpilot.car.toyota.gas_interceptor import GasInterceptorCarController
-from iqdbc.iqpilot.car.toyota.values import ToyotaFlagsIQ
+from iqdbc.lvbs.car.toyota.gas_interceptor import GasInterceptorCarController
+from iqdbc.lvbs.car.toyota.values import ToyotaFlagsIQ
 
 Ecu = structs.CarParams.Ecu
 LongCtrlState = structs.CarControl.Actuators.LongControlState

@@ -6,7 +6,7 @@ import unittest
 import itertools
 
 from iqdbc.car.toyota.values import ToyotaSafetyFlags
-from iqdbc.iqpilot.car.toyota.values import ToyotaSafetyFlagsIQ
+from iqdbc.lvbs.car.toyota.values import ToyotaSafetyFlagsIQ
 from iqdbc.car.structs import CarParams
 from iqdbc.safety.tests.libsafety import libsafety_py
 import iqdbc.safety.tests.common as common

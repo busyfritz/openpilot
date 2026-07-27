@@ -5,7 +5,7 @@ from iqdbc.car.chrysler.carstate import CarState
 from iqdbc.car.chrysler.radar_interface import RadarInterface
 from iqdbc.car.chrysler.values import CAR, RAM_HD, RAM_DT, RAM_CARS, ChryslerFlags, ChryslerSafetyFlags
 from iqdbc.car.interfaces import CarInterfaceBase
-from iqdbc.iqpilot.car.chrysler.values_ext import ChryslerFlagsIQ
+from iqdbc.lvbs.car.chrysler.iq_values import ChryslerFlagsIQ
 
 
 class CarInterface(CarInterfaceBase):
@@ -100,9 +100,10 @@ class CarInterface(CarInterfaceBase):
       stock_cp.wheelbase = 3.79
       stock_cp.steerRatio = 19.
 
+    # LKAS heartbeat on bus 0 (msg 0x4FF) means the camera is on the ADAS bus and
+    # IQ.Pilot can steer down to a standstill.
     if 0x4FF in fingerprint[0]:
       ret.flags |= ChryslerFlagsIQ.NO_MIN_STEERING_SPEED.value
       stock_cp.minSteerSpeed = 0.
-
 
     return ret

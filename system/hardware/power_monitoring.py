@@ -13,11 +13,13 @@ CAR_CHARGING_RATE_W = 45
 
 VBATT_PAUSE_CHARGING = 11.8           # Lower limit on the LPF car battery voltage
 
-# FastSleep (deep standby): enter low power at the normal shutdown voltage, shut down
-# at a lower floor, exit once the alternator is charging
+# FastSleep (deep standby): enter low power once parked with the screen idled off, or
+# immediately at the normal shutdown voltage; shut down at a lower floor, exit once the
+# alternator is charging
 VBATT_LOW_POWER_ENTRY = 11.8
 VBATT_LOW_POWER_EXIT = 12.8
 VBATT_HARD_SHUTDOWN = 11.5
+LOW_POWER_ENTRY_TIME_S = 300
 MAX_TIME_OFFROAD_S = 30*3600
 MIN_ON_TIME_S = 3600
 DELAY_SHUTDOWN_TIME_S = 300 # Wait at least DELAY_SHUTDOWN_TIME_S seconds after offroad_time to shutdown.
@@ -124,14 +126,18 @@ class PowerMonitoring:
     return 0 < iq_max_time_val_s <= offroad_time
 
   # FastSleep: see if we should enter low power mode instead of shutting down
-  def should_enter_low_power(self, ignition: bool, in_car: bool, offroad_timestamp: float | None) -> bool:
+  def should_enter_low_power(self, ignition: bool, in_car: bool, offroad_timestamp: float | None, screen_off: bool) -> bool:
     if offroad_timestamp is None or ignition or not in_car:
       return False
     if not self.params.get_bool("FastSleep"):
       return False
     offroad_time = time.monotonic() - offroad_timestamp
-    return (self.car_voltage_mV < (VBATT_LOW_POWER_ENTRY * 1e3) and
-            offroad_time > VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S)
+    # a healthy battery rests above VBATT_LOW_POWER_ENTRY, so parked entry must be
+    # time-based; the voltage trigger stays as the sagging-battery fast path
+    low_voltage = (self.car_voltage_mV < (VBATT_LOW_POWER_ENTRY * 1e3) and
+                   offroad_time > VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S)
+    parked_idle = screen_off and offroad_time > LOW_POWER_ENTRY_TIME_S
+    return low_voltage or parked_idle
 
   # See if we need to shutdown
   def should_shutdown(self, ignition: bool, in_car: bool, offroad_timestamp: float | None, started_seen: bool):
@@ -141,12 +147,15 @@ class PowerMonitoring:
     now = time.monotonic()
     should_shutdown = False
     offroad_time = (now - offroad_timestamp)
-    vbatt_min = VBATT_HARD_SHUTDOWN if self.params.get_bool("FastSleep") else VBATT_PAUSE_CHARGING
+    fast_sleep = self.params.get_bool("FastSleep")
+    vbatt_min = VBATT_HARD_SHUTDOWN if fast_sleep else VBATT_PAUSE_CHARGING
     low_voltage_shutdown = (self.car_voltage_mV < (vbatt_min * 1e3) and
                             offroad_time > VOLTAGE_SHUTDOWN_MIN_OFFROAD_TIME_S)
     should_shutdown |= self.max_time_offroad_exceeded(offroad_time)
     should_shutdown |= low_voltage_shutdown
-    should_shutdown |= (self.car_battery_capacity_uWh <= 0)
+    # the 30 Wh bookkeeping model empties within hours at offroad draw regardless of the
+    # real battery state; under FastSleep the measured voltage floors govern instead
+    should_shutdown |= (self.car_battery_capacity_uWh <= 0) and not fast_sleep
     should_shutdown &= not ignition
     should_shutdown &= (not self.params.get_bool("DisablePowerDown"))
     should_shutdown &= in_car

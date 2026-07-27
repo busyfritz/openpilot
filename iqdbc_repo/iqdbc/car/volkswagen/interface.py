@@ -171,7 +171,7 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitTimer = 0.4
     if ret.flags & VolkswagenFlags.PQ:
       ret.steerActuatorDelay = 0.2
-      ret.longitudinalTuning.kfDEPRECATED = 1.2
+      ret.longitudinalTuning.kf = 1.2
       ret.longitudinalTuning.kpBP = [0.]
       ret.longitudinalTuning.kpV = [.45]
       ret.longitudinalTuning.kiBP = [0.]

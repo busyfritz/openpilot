@@ -161,6 +161,7 @@ void msgq_init_publisher(msgq_queue_t * q) {
   //std::cout << "Starting publisher" << std::endl;
   uint64_t uid = msgq_get_uid();
 
+  q->last_reap_us = 0;
   *q->write_uid = uid;
   *q->num_readers = 0;
 
@@ -173,6 +174,7 @@ void msgq_init_publisher(msgq_queue_t * q) {
 }
 
 static void thread_signal(uint32_t tid) {
+  if (tid == 0) return;
   #ifdef __APPLE__
     // macOS doesn't have tkill, rely on polling instead
     (void)tid;
@@ -183,6 +185,39 @@ static void thread_signal(uint32_t tid) {
     syscall(SYS_tkill, tid, SIGUSR2);
   #endif
 }
+
+#ifdef __linux__
+// Zero reader slots whose owning thread died without closing, so the notify loop
+// stops signaling their TIDs: the kernel recycles TIDs, and a stale slot means
+// every send fires SIGUSR2 at an unrelated process — fatal for one with no
+// handler installed (e.g. a subscriber's short-lived compiler child). Amortized
+// to ~1Hz per publisher; reclaim-at-overflow alone leaves stale slots signaled
+// indefinitely while the table has free space.
+static void msgq_reap_dead_readers(msgq_queue_t *q) {
+  int64_t now_us = std::chrono::duration_cast<std::chrono::microseconds>(
+      std::chrono::steady_clock::now().time_since_epoch()).count();
+  if (now_us - q->last_reap_us < 1000000)
+    return;
+  q->last_reap_us = now_us;
+
+  uint64_t num_readers = std::min<uint64_t>(NUM_READERS, *q->num_readers);
+  for (uint64_t i = 0; i < num_readers; i++){
+    uint64_t slot_uid = *q->read_uids[i];
+    uint32_t slot_tid = slot_uid & 0xFFFFFFFF;
+    if (slot_uid == 0 || slot_tid == 0)
+      continue;
+    char proc_path[32];
+    snprintf(proc_path, sizeof(proc_path), "/proc/%u", slot_tid);
+    struct stat st;
+    if (stat(proc_path, &st) == 0)
+      continue;
+    uint64_t expected = slot_uid;
+    if (std::atomic_compare_exchange_strong(q->read_uids[i], &expected, (uint64_t)0)){
+      *q->read_valids[i] = false;
+    }
+  }
+}
+#endif
 
 // claim slot i (its uid CAS already succeeded) for the calling thread
 static void msgq_claim_slot(msgq_queue_t * q, size_t i, uint64_t uid) {
@@ -377,6 +412,10 @@ int msgq_msg_send(msgq_msg_t * msg, msgq_queue_t *q){
   // Update write pointer
   uint32_t new_ptr = ALIGN(write_pointer + msg->size + sizeof(int64_t));
   PACK64(*q->write_pointer, write_cycles, new_ptr);
+
+#ifdef __linux__
+  msgq_reap_dead_readers(q);
+#endif
 
   // Notify readers
   for (uint64_t i = 0; i < num_readers; i++){

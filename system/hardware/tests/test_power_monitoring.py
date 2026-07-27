@@ -2,7 +2,8 @@ import pytest
 
 from openpilot.common.params import Params
 from openpilot.system.hardware.power_monitoring import PowerMonitoring, CAR_BATTERY_CAPACITY_uWh, \
-  CAR_CHARGING_RATE_W, VBATT_PAUSE_CHARGING, DELAY_SHUTDOWN_TIME_S, MAX_TIME_OFFROAD_S
+  CAR_CHARGING_RATE_W, VBATT_PAUSE_CHARGING, DELAY_SHUTDOWN_TIME_S, MAX_TIME_OFFROAD_S, \
+  VBATT_HARD_SHUTDOWN, LOW_POWER_ENTRY_TIME_S
 
 # Create fake time
 ssb = 0.
@@ -232,3 +233,59 @@ class TestPowerMonitoring:
     result = pm.max_time_offroad_exceeded(offroad_time_s)
 
     assert result == expected_result
+
+  # FastSleep must not shut down on the empty bookkeeping model while voltage is healthy
+  def test_fast_sleep_ignores_battery_capacity_model(self, mocker):
+    self.params.put_bool("FastSleep", True)
+    self.params.put("MaxTimeOffroad", 0)
+    try:
+      pm_patch(mocker, "HARDWARE.get_current_power_draw", 0)
+      pm = PowerMonitoring()
+      pm.car_battery_capacity_uWh = 0
+      start_time = ssb
+      for _ in range(DELAY_SHUTDOWN_TIME_S + 100):
+        pm.calculate(GOOD_VOLTAGE, False)
+      assert not pm.should_shutdown(False, True, start_time, True)
+    finally:
+      self.params.put_bool("FastSleep", False)
+
+  # FastSleep still shuts down below the hard voltage floor
+  def test_fast_sleep_hard_voltage_floor(self, mocker):
+    self.params.put_bool("FastSleep", True)
+    try:
+      pm_patch(mocker, "HARDWARE.get_current_power_draw", 0)
+      pm = PowerMonitoring()
+      pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
+      start_time = ssb
+      for _ in range(DELAY_SHUTDOWN_TIME_S + 100):
+        pm.calculate((VBATT_HARD_SHUTDOWN - 0.5) * 1e3, False)
+      assert pm.should_shutdown(False, True, start_time, True)
+    finally:
+      self.params.put_bool("FastSleep", False)
+
+  def test_fast_sleep_low_power_entry(self, mocker):
+    self.params.put_bool("FastSleep", True)
+    try:
+      pm_patch(mocker, "HARDWARE.get_current_power_draw", 0)
+
+      # parked with the screen idled off: time-based entry at healthy voltage
+      pm = PowerMonitoring()
+      start_time = ssb
+      for _ in range(LOW_POWER_ENTRY_TIME_S + 10):
+        pm.calculate(GOOD_VOLTAGE, False)
+      assert pm.should_enter_low_power(False, True, start_time, screen_off=True)
+      assert not pm.should_enter_low_power(False, True, start_time, screen_off=False)
+      assert not pm.should_enter_low_power(True, True, start_time, screen_off=True)
+      assert not pm.should_enter_low_power(False, False, start_time, screen_off=True)
+
+      # sagging battery: voltage entry regardless of screen state
+      pm = PowerMonitoring()
+      start_time = ssb
+      for _ in range(100):
+        pm.calculate((VBATT_HARD_SHUTDOWN + 0.1) * 1e3, False)
+      assert pm.should_enter_low_power(False, True, start_time, screen_off=False)
+
+      self.params.put_bool("FastSleep", False)
+      assert not pm.should_enter_low_power(False, True, start_time, screen_off=True)
+    finally:
+      self.params.put_bool("FastSleep", False)

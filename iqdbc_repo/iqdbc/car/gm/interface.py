@@ -10,13 +10,13 @@ from iqdbc.car.gm.radar_interface import RadarInterface, RADAR_HEADER_MSG, CAMER
 from iqdbc.car.gm.values import CAR, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, SDGM_CAR, ALT_ACCS, CanBus, GMSafetyFlags
 from iqdbc.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, LateralAccelFromTorqueCallbackType
 
-from iqdbc.iqpilot.car.gm.interface_ext import CarInterfaceExt
-from iqdbc.iqpilot.car.gm.values_ext import GMFlagsIQ, GMSafetyFlagsIQ
+from iqdbc.lvbs.car.gm.iq_interface import IQCarInterface
+from iqdbc.lvbs.car.gm.iq_values import GMFlagsIQ, GMSafetyFlagsIQ
 
 TransmissionType = structs.CarParams.TransmissionType
 NetworkLocation = structs.CarParams.NetworkLocation
 
-# iqpilot-specific torque parameters for Bolt cars that actually use the d parameter
+# Bolt Non-ACC uses the 4th (d) tune parameter; stock tunes zero it out.
 NON_LINEAR_TORQUE_PARAMS_IQ = {
   CAR.CHEVROLET_BOLT_NON_ACC: [2.24, 1.1, 0.28, -0.07],
   CAR.CHEVROLET_BOLT_NON_ACC_1ST_GEN: [1.8, 1.1, 0.3, -0.045],
@@ -30,7 +30,7 @@ NON_LINEAR_TORQUE_PARAMS = {
 }
 
 
-class CarInterface(CarInterfaceBase, CarInterfaceExt):
+class CarInterface(CarInterfaceBase, IQCarInterface):
   CarState = CarState
   CarController = CarController
   RadarInterface = RadarInterface
@@ -40,7 +40,7 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
 
   def __init__(self, CP, CP_IQ):
     CarInterfaceBase.__init__(self, CP, CP_IQ)
-    CarInterfaceExt.__init__(self, CP, CarInterfaceBase)
+    IQCarInterface.__init__(self, CP, CarInterfaceBase)
 
   @staticmethod
   def get_pid_accel_limits(CP, CP_IQ, current_speed, cruise_speed):
@@ -241,11 +241,10 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
                      CAR.CHEVROLET_BOLT_NON_ACC_2ND_GEN, CAR.CHEVROLET_TRAILBLAZER_NON_ACC_2ND_GEN):
       stock_cp.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, stock_cp.lateralTuning)
-
     elif candidate in (CAR.CHEVROLET_EQUINOX_NON_ACC_3RD_GEN, ):
       CarInterfaceBase.configure_torque_tune(candidate, stock_cp.lateralTuning)
 
-    # NON_ACC vehicles should use camera car speed thresholds
+    # Non-ACC cars steer/long via the forward camera and pcmCruise, not the ASCM.
     if ret.flags & GMFlagsIQ.NON_ACC:
       stock_cp.dashcamOnly = False
       stock_cp.alphaLongitudinalAvailable = False
@@ -254,13 +253,13 @@ class CarInterface(CarInterfaceBase, CarInterfaceExt):
       stock_cp.pcmCruise = True
       stock_cp.safetyConfigs[0].safetyParam |= GMSafetyFlags.HW_CAM.value
       ret.iqSafetyFlags |= GMSafetyFlagsIQ.NON_ACC
-      stock_cp.minEnableSpeed = 24 * CV.MPH_TO_MS  # 24 mph
-      stock_cp.minSteerSpeed = 3.0   # ~6 mph
+      stock_cp.minEnableSpeed = 24 * CV.MPH_TO_MS
+      stock_cp.minSteerSpeed = 3.0
 
-    # dashcamOnly platforms: untested platforms, need user validations
+    # Untested Non-ACC platforms ship dashcam-only pending user validation.
     if candidate in (CAR.CHEVROLET_BOLT_NON_ACC_2ND_GEN, CAR.CHEVROLET_EQUINOX_NON_ACC_3RD_GEN,
-                     CAR.CHEVROLET_SUBURBAN_NON_ACC_11TH_GEN, CAR.CADILLAC_CT6_NON_ACC_1ST_GEN, CAR.CHEVROLET_TRAILBLAZER_NON_ACC_2ND_GEN,
-                     CAR.CADILLAC_XT5_NON_ACC_1ST_GEN):
+                     CAR.CHEVROLET_SUBURBAN_NON_ACC_11TH_GEN, CAR.CADILLAC_CT6_NON_ACC_1ST_GEN,
+                     CAR.CHEVROLET_TRAILBLAZER_NON_ACC_2ND_GEN, CAR.CADILLAC_XT5_NON_ACC_1ST_GEN):
       stock_cp.dashcamOnly = True
 
     return ret

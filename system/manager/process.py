@@ -181,6 +181,32 @@ class NativeProcess(ManagerProcess):
     self.shutting_down = False
 
 
+def _normalize_bundle_modes(bundle: str) -> None:
+  import json
+  candidates = []
+  if env_root := os.environ.get("IQPILOT_PROPRIETARY_ROOT"):
+    candidates += [os.path.join(env_root, bundle), env_root]
+  candidates += [
+    os.path.join(BASEDIR, ".iqpilot", "bundles", bundle),
+    os.path.join(os.path.dirname(BASEDIR), ".iqpilot", "bundles", bundle),
+    os.path.join(BASEDIR, "artifacts", bundle),
+  ]
+  root = next((c for c in candidates if os.path.isfile(os.path.join(c, "manifest.json"))), None)
+  if root is None:
+    return
+  try:
+    with open(os.path.join(root, "manifest.json")) as f:
+      manifest = json.load(f)
+    for rel, meta in manifest.items():
+      if not (isinstance(meta, dict) and "mode" in meta and "sha256" in meta):
+        continue
+      path = os.path.join(root, rel)
+      if os.path.isfile(path) and (os.stat(path).st_mode & 0o777) != meta["mode"]:
+        os.chmod(path, meta["mode"])
+  except Exception:
+    cloudlog.exception(f"failed to normalize bundle modes for {bundle}")
+
+
 class BundleProcess(NativeProcess):
   def __init__(self, name, bundle, entry, should_run, enabled=True, sigkill=False, restart_if_crash=False):
     self.bundle = bundle
@@ -203,6 +229,11 @@ class BundleProcess(NativeProcess):
       enabled=enabled,
       sigkill=sigkill,
     )
+
+  def start(self) -> None:
+    if self.proc is None:
+      _normalize_bundle_modes(self.bundle)
+    super().start()
 
 
 class PythonProcess(ManagerProcess):

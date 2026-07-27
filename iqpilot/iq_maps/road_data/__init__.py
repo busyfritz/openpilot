@@ -1,15 +1,21 @@
 """
 Copyright © IQ.Lvbs, apart of Project Teal Lvbs, All Rights Reserved, licensed under https://konn3kt.com/tos
+
+Shared tunables and a small debug logger for the offline road-name / turn-speed path.
 """
 from openpilot.common.swaglog import cloudlog
 
-LOOK_AHEAD_HORIZON_TIME = 15.  # s. Time horizon for look ahead of turn speed sections to provide on iqLiveData msg.
+# seconds of road ahead we scan for upcoming turn-speed zones published on iqLiveData
+LOOK_AHEAD_HORIZON_TIME = 15.0
+# clear the on-screen road name once it has gone this long without a refresh (s)
+ROAD_NAME_TIMEOUT = 30
+
+R = 6373000.0            # mean Earth radius in metres (great-circle distance math)
+QUERY_RADIUS = 3000      # online OSM query reach, metres
+QUERY_RADIUS_OFFLINE = 2250  # offline-tile OSM query reach, metres
+
 _DEBUG = False
 _CLOUDLOG_DEBUG = False
-ROAD_NAME_TIMEOUT = 30  # secs
-R = 6373000.0  # approximate radius of earth in mts
-QUERY_RADIUS = 3000  # mts. Radius to use on OSM data queries.
-QUERY_RADIUS_OFFLINE = 2250  # mts. Radius to use on offline OSM data queries.
 
 
 def debug_road_data(msg, log_to_cloud=True):

@@ -6,16 +6,20 @@ from iqdbc.car.interfaces import CarStateBase
 from iqdbc.car.tesla import TESLA_BLINKERS
 from iqdbc.car.tesla.values import DBC, CANBUS, GEAR_MAP, STEER_THRESHOLD, TeslaFlags
 
-from iqdbc.iqpilot.car.tesla.carstate_ext import CarStateExt
-from iqdbc.iqpilot.car.tesla.values import TeslaFlagsIQ
+from iqdbc.lvbs.car.tesla.iq_carstate import IQCarState
+from iqdbc.lvbs.car.tesla.values import TeslaFlagsIQ
+from openpilot.common.params import Params
+from openpilot.system.proprietary_runtime._verified_import import import_verified_module
+
+vehicle_state = import_verified_module("iqpilot_alc_private", "iqpilot_private.konn3kt.iqlvbs.vehicle_state")
 
 ButtonType = structs.CarState.ButtonEvent.Type
 
 
-class CarState(CarStateBase, CarStateExt):
+class CarState(CarStateBase, IQCarState):
   def __init__(self, CP, CP_IQ):
     CarStateBase.__init__(self, CP, CP_IQ)
-    CarStateExt.__init__(self, CP, CP_IQ)
+    IQCarState.__init__(self, CP, CP_IQ)
     self.can_define = CANDefine(DBC[CP.carFingerprint][Bus.party])
     self.shifter_values = self.can_define.dv["DI_systemStatus"]["DI_gear"]
 
@@ -27,6 +31,7 @@ class CarState(CarStateBase, CarStateExt):
     self.acc_state_last = 0
     self.das_control = None
     self.das_body_controls_dat = b""
+    self._odometer_store = vehicle_state.VehicleOdometerStore(CP, Params())
     self.cruise_override = False
 
   def update_summon_state(self, summon_state: str, cruise_enabled: bool):
@@ -154,7 +159,9 @@ class CarState(CarStateBase, CarStateExt):
     if TESLA_BLINKERS and Bus.cam in can_parsers:
       self.das_body_controls_dat = bytes(can_parsers[Bus.cam].dat.get(0x3E9, b""))
 
-    CarStateExt.update(self, ret, ret_iq, can_parsers)
+    IQCarState.update(self, ret, ret_iq, can_parsers)
+    if ret.odometer > 0.0:
+      ret.odometer = self._odometer_store.record(ret.odometer) or 0.0
 
     return ret, ret_iq
 
@@ -163,7 +170,7 @@ class CarState(CarStateBase, CarStateExt):
     parsers = {
       Bus.party: CANParser(DBC[CP.carFingerprint][Bus.party], [], CANBUS.party),
       Bus.ap_party: CANParser(DBC[CP.carFingerprint][Bus.party], [], CANBUS.autopilot_party),
-      **CarStateExt.get_parser(CP, CP_IQ),
+      **IQCarState.get_parser(CP, CP_IQ),
     }
     # Stock DAS_bodyControls from the AP bus (bus 2) for the nav blinker.
     if TESLA_BLINKERS and CP_IQ.flags & TeslaFlagsIQ.HAS_VEHICLE_BUS and Bus.adas in DBC[CP.carFingerprint]:

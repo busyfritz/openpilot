@@ -5,16 +5,16 @@ from iqdbc.car.chrysler import chryslercan
 from iqdbc.car.chrysler.values import RAM_CARS, CarControllerParams, ChryslerFlags, RAM_DT
 from iqdbc.car.interfaces import CarControllerBase
 
-from iqdbc.iqpilot.car.chrysler.carcontroller_ext import CarControllerExt
-from iqdbc.iqpilot.car.chrysler.aol import AolCarController
-from iqdbc.iqpilot.car.chrysler.values_ext import ChryslerFlagsIQ
+from iqdbc.lvbs.car.chrysler.iq_carcontroller import IQCarController
+from iqdbc.lvbs.car.chrysler.aol import AolCarController
+from iqdbc.lvbs.car.chrysler.iq_values import ChryslerFlagsIQ
 
 
-class CarController(CarControllerBase, AolCarController, CarControllerExt):
+class CarController(CarControllerBase, AolCarController, IQCarController):
   def __init__(self, dbc_names, CP, CP_IQ):
     CarControllerBase.__init__(self, dbc_names, CP, CP_IQ)
     AolCarController.__init__(self)
-    CarControllerExt.__init__(self, CP, CP_IQ)
+    IQCarController.__init__(self, CP, CP_IQ)
     self.apply_torque_last = 0
 
     self.hud_count = 0
@@ -58,7 +58,7 @@ class CarController(CarControllerBase, AolCarController, CarControllerExt):
       # TODO: can we make this more sane? why is it different for all the cars?
       lkas_control_bit = self.lkas_control_bit_prev
       if self.CP_IQ.flags & ChryslerFlagsIQ.NO_MIN_STEERING_SPEED or self.CP.carFingerprint in RAM_DT:
-        lkas_control_bit = CarControllerExt.get_lkas_control_bit(self, CS, CC, lkas_control_bit)
+        lkas_control_bit = IQCarController.get_lkas_control_bit(self, CS, CC, lkas_control_bit)
       elif CS.out.vEgo > self.CP.minSteerSpeed:
         lkas_control_bit = True
       elif self.CP.flags & ChryslerFlags.HIGHER_MIN_STEERING_SPEED:

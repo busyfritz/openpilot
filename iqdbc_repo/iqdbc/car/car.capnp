@@ -209,6 +209,8 @@ struct CarState {
   lateralAvailable @61 :Bool;        # lateral control is available even if cruise is faulted
   cruiseFaultLateralMode @62 :Bool;  # cruise is faulted but lateral control is still active
   radarDisableFailed @66 :Bool;
+  # Physical vehicle odometer in kilometers. Zero means unavailable on this platform.
+  odometer @67 :Float64;
 
   # cruise state
   cruiseState @10 :CruiseState;
@@ -235,6 +237,42 @@ struct CarState {
   charging @43 :Bool;
   fuelTankLevelL @63 :Float32; # raw fuel tank level in liters (konn3kt: VW PQ Kombi_1.Tankinhalt)
   batteryDetails @65 :BatteryDetails;
+
+  # carrotpilot HKG extension state
+  vCluRatio @68 :Float32;
+  logCarrot @69 :Text;
+  softHoldActive @70 :Int16;
+  activateCruise @71 :Int16;
+  latEnabled @72 :Bool;
+  pcmCruiseGap @73 :Int16;
+  speedLimit @74 :Float32;
+  speedLimitDistance @75 :Float32;
+  gearStep @76 :Int16;
+  tpms @77 :Tpms;
+  useLaneLineSpeed @78 :Float32;
+  leftLatDist @79 :Float32;
+  rightLatDist @80 :Float32;
+  leftLongDist @81 :Float32;
+  rightLongDist @82 :Float32;
+  carrotCruise @83 :Int16;
+  leftLaneLine @84 :Int16;
+  rightLaneLine @85 :Int16;
+  datetime @86 :UInt64;
+  leftRearLongDist @87 :Float32;
+  rightRearLongDist @88 :Float32;
+  leftRearLatDist @89 :Float32;
+  rightRearLatDist @90 :Float32;
+  trailerConnected @91 :Bool;
+  ureaGauge @92 :Float32;
+  evModeActive @93 :Bool;
+  evModeValid @94 :Bool;
+
+  struct Tpms {
+    fl @0 :Float32;
+    fr @1 :Float32;
+    rl @2 :Float32;
+    rr @3 :Float32;
+  }
 
   struct BatteryDetails {
     capacity @0 :Float32;
@@ -300,13 +338,16 @@ struct CarState {
       setCruise @9;
       resumeCruise @10;
       gapAdjustCruise @11;
+      lfaButton @12;
+      paddleLeft @13;
+      paddleRight @14;
     }
   }
 
   # deprecated
   errorsDEPRECATED @0 :List(OnroadEventDEPRECATED.EventName);
-  gasDEPRECATED @3 :Float32;        # this is user pedal only
-  brakeLightsDEPRECATED @19 :Bool;
+  gas @3 :Float32;        # this is user pedal only
+  brakeLights @19 :Bool;
   steeringRateLimitedDEPRECATED @29 :Bool;
   canMonoTimesDEPRECATED @12: List(UInt64);
   canRcvTimeoutDEPRECATED @49 :Bool;
@@ -344,6 +385,18 @@ struct RadarData @0x888ad6581cf0aacb {
 
     # some radars flag measurements VS estimates
     measured @6 :Bool;
+
+    vLead @7 :Float32; # m/s
+    aLead @8 :Float32; # m/s^2
+    jLead @9 :Float32; # m/s^3
+    radarSource @10 :RadarSource;
+
+    enum RadarSource {
+      frontRadar @0;
+      scc @1;
+      corner235 @2;
+      corner180 @3;
+    }
   }
 
   enum ErrorDEPRECATED {
@@ -399,6 +452,8 @@ struct CarControl {
     brake @1: Float32; # [0.0, 1.0]
     torqueOutputCan @8: Float32;   # value sent over can to the car
     speed @6: Float32;  # m/s
+    jerk @9: Float32;  # m/s^3
+    aTarget @10: Float32;  # m/s^2
 
     enum LongControlState @0xe40f3a917d908282{
       off @0;
@@ -434,6 +489,12 @@ struct CarControl {
     leadFollowTime @11: Float32;
     leadDistance @12: Float32;
     driverUnresponsive @13: Bool;
+    activeCarrot @14: Int16;
+    leadRelSpeed @15: Float32;
+    leadDPath @16: Float32;
+    leadRadar @17: Int16;
+    modelDesire @18: Int16;
+    atcDistance @19: Float32;
 
     # not used with the dash, TODO: separate structs for dash UI and device UI
     audibleAlert @5: AudibleAlert;
@@ -497,6 +558,7 @@ struct CarParams {
   enableBsm @56 :Bool;       # blind spot monitoring
   flags @64 :UInt32;         # flags for car specific quirks
   alphaLongitudinalAvailable @71 :Bool;
+  extFlags @79 :UInt32;       # carrotpilot HKG extension flags
 
   minEnableSpeed @7 :Float32;
   minSteerSpeed @8 :Float32;
@@ -593,7 +655,7 @@ struct CarParams {
     kpV @1 :List(Float32);
     kiBP @2 :List(Float32);
     kiV @3 :List(Float32);
-    kfDEPRECATED @6 :Float32;
+    kf @6 :Float32;
     deadzoneBPDEPRECATED @4 :List(Float32);
     deadzoneVDEPRECATED @5 :List(Float32);
   }
@@ -766,11 +828,11 @@ struct CarParams {
   maxSteeringAngleDegDEPRECATED @54 :Float32;
   longitudinalActuatorDelayLowerBoundDEPRECATED @61 :Float32;
   stoppingControlDEPRECATED @31 :Bool; # Does the car allow full control even at lows speeds when stopping
-  radarTimeStepDEPRECATED @45: Float32 = 0.05;  # time delta between radar updates, 20Hz is very standard
+  radarTimeStep @45: Float32 = 0.05;  # time delta between radar updates, 20Hz is very standard
   enableDsuDEPRECATED @5 :Bool;        # driving support unit
-  vEgoStartingDEPRECATED @59 :Float32;
-  startAccelDEPRECATED @32 :Float32;
-  startingStateDEPRECATED @70 :Bool;
+  vEgoStarting @59 :Float32;
+  startAccel @32 :Float32;
+  startingState @70 :Bool;
   vEgoStoppingDEPRECATED @29 :Float32;
   stoppingDecelRateDEPRECATED @52 :Float32;
 }

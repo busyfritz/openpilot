@@ -3,7 +3,7 @@ from iqdbc.car.interfaces import CarInterfaceBase
 from iqdbc.car.nissan.carcontroller import CarController
 from iqdbc.car.nissan.carstate import CarState
 from iqdbc.car.nissan.values import CAR, NissanSafetyFlags
-from iqdbc.iqpilot.car.nissan.values import NissanSafetyFlagsIQ
+from iqdbc.lvbs.car.nissan.values import NissanSafetyFlagsIQ
 
 class CarInterface(CarInterfaceBase):
   CarState = CarState

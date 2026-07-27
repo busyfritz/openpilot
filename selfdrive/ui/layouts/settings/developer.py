@@ -9,7 +9,7 @@ from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.multilang import tr, tr_noop
 
 if gui_app.iqpilot_ui():
-  from openpilot.system.ui.iqpilot.widgets.list_view import toggle_item
+  from openpilot.system.ui.iqwidgets.widgets.list_view import toggle_item
 
 # Description constants
 DESCRIPTIONS = {

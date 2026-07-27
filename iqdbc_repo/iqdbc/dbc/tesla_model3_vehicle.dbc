@@ -397,5 +397,10 @@ BO_ 826 ID33AUI_rangeSOC: 8 VehicleBus
 BO_ 306 ID132HVBattAmpVolt: 8 VehicleBus
  SG_ BattVoltage132 : 0|16@1+ (0.01,0) [0|655.35] "V" Receiver
 
+BO_ 950 ID3B6UI_odometer: 8 VehicleBus
+ SG_ UI_odometer : 0|32@1+ (0.001,0) [0|4294967.295] "km" Receiver
+ SG_ UI_odometerCounter : 52|4@1+ (1,0) [0|15] "" Receiver
+ SG_ UI_odometerChecksum : 56|8@1+ (1,0) [0|255] "" Receiver
+
 BO_ 658 ID292BMS_SOC: 8 VehicleBus
  SG_ SOCUI292 : 10|10@1+ (0.1,0) [0|102.3] "%" Receiver

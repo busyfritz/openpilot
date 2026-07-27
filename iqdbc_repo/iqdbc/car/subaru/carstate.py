@@ -6,15 +6,15 @@ from iqdbc.car.interfaces import CarStateBase
 from iqdbc.car.subaru.values import DBC, CanBus, SubaruFlags
 from iqdbc.car import CanSignalRateCalculator
 
-from iqdbc.iqpilot.car.subaru.aol import AolCarState
-from iqdbc.iqpilot.car.subaru.stop_and_go import SnGCarState
+from iqdbc.lvbs.car.subaru.aol import AolCarState
+from iqdbc.lvbs.car.subaru.stop_and_go import IQStopAndGoState
 
 
-class CarState(CarStateBase, AolCarState, SnGCarState):
+class CarState(CarStateBase, AolCarState, IQStopAndGoState):
   def __init__(self, CP, CP_IQ):
     CarStateBase.__init__(self, CP, CP_IQ)
     AolCarState.__init__(self, CP, CP_IQ)
-    SnGCarState.__init__(self, CP, CP_IQ)
+    IQStopAndGoState.__init__(self, CP, CP_IQ)
     can_define = CANDefine(DBC[CP.carFingerprint][Bus.pt])
     self.shifter_values = can_define.dv["Transmission"]["Gear"]
 
@@ -144,7 +144,7 @@ class CarState(CarStateBase, AolCarState, SnGCarState):
       self.es_infotainment_msg = copy.copy(cp_cam.vl["ES_Infotainment"])
 
     AolCarState.update_aol(self, ret, can_parsers)
-    SnGCarState.update(self, ret, can_parsers)
+    IQStopAndGoState.update(self, ret, can_parsers)
 
     return ret, ret_iq
 

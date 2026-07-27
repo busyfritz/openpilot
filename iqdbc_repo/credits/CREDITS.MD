@@ -6,63 +6,18 @@ It does not replace the repository-wide license files for IQ.Pilot itself or any
 
 ## Credits:
 
-### Hyundai / Kia / Genesis (HKG) - Sunnypilot
-
-#### Contributors
-
-Full credit for the Hyundai / Kia / Genesis port, along with the HKG-specific tuning work used in this tree, belongs to:
-
-- Jason Wen
-- James Vecellio-Grant
-- sunnypilot
-
-#### Attribution
-
-This repository carries HKG-side tuning and port lineage that originated from, and/or is verbatim their work. They are the authors of the Sunnypilot-side HKG port and its tuning, and are accredited as such, IQ.Lvbs claims no copyright, credit, or authorship of the components listed below.
-
-#### Upstream License Notice
-
-The HKG work attributed above is acknowledged here under LICENSE notice:
-
-```text
-MIT License
-
-Copyright (c) 2024 Jason Wen, James Vecellio-Grant, Sunnypilot, and a number of other contributors.
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
-
-#### Scope
-
-This licensing is limited to `iqdbc_repo/iqdbc/car/hyundai` and `iqdbc_repo/iqdbc/iqpilot/car/hyundai`.
-
 ### Hyundai / Kia / Genesis (HKG) - carrotpilot
 
 #### Contributors
 
-Full credit for the carrotpilot-side HKG tuning lineage carried in this tree belongs to:
+Full credit for the Hyundai / Kia / Genesis port and its HKG-specific tuning belongs to:
 
-- carrotpilot devs (ajoutam)
+- carrotpilot
+- ajouatom
 
 #### Attribution
 
-This repository carries HKG-side tuning and port lineage that originated from, and/or is verbatim their work. They are the authors of the carrotpilot-side HKG tuning credited here, and are accredited as such, IQ.Lvbs claims no copyright, credit, or authorship of the components listed below.
+This repository carries the carrotpilot HKG implementation from `ajouatom/openpilot`, imported from commit `b54d44efd514bc61f86f08b01c23a6c190885c07`. IQ.Lvbs claims no copyright, credit, or authorship over that implementation.
 
 #### Upstream License Notice
 
@@ -80,7 +35,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 #### Scope
 
-This licensing is limited to `iqdbc_repo/iqdbc/car/hyundai` and `iqdbc_repo/iqdbc/iqpilot/car/hyundai`.
+This licensing is limited to the Hyundai/Kia/Genesis car, DBC, and safety implementations and the supporting schema and compatibility changes required by that port.
 
 ### Honda
 

@@ -21,7 +21,7 @@ from openpilot.system.ui.widgets.option_dialog import MultiOptionDialog
 from openpilot.system.ui.widgets.scroller_tici import Scroller
 
 if gui_app.iqpilot_ui():
-  from openpilot.system.ui.iqpilot.widgets.list_view import button_item
+  from openpilot.system.ui.iqwidgets.widgets.list_view import button_item
 
 # Description constants
 DESCRIPTIONS = {

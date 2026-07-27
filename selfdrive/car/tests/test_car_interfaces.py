@@ -39,7 +39,7 @@ class TestCarInterfaces:
       car_interface.CP.openpilotLongitudinalControl = False
     car_params = car_interface.CP.as_reader()
     car_params_iq = car_interface.CP_IQ
-    iqpilot_interfaces.setup_interfaces(car_interface)
+    iqpilot_interfaces.apply_iq_car_config(car_interface)
 
     cc_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
     cc_sp_msg = FuzzyGenerator.get_random_msg(data.draw, custom.IQCarControl, real_floats=True)

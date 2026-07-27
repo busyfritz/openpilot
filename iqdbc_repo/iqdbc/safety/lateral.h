@@ -1,4 +1,4 @@
-#include "iqdbc/safety/iqpilot/aol.h"
+#include "iqdbc/safety/aol/aol.h"
 #include "iqdbc/safety/declarations.h"
 
 // ISO 11270

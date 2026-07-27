@@ -2,7 +2,7 @@ from iqdbc.car import CanBusBase
 from iqdbc.car.common.conversions import Conversions as CV
 from iqdbc.car.honda.values import (HondaFlags, HONDA_BOSCH, HONDA_BOSCH_ALT_RADAR, HONDA_BOSCH_RADARLESS,
                                       HONDA_BOSCH_CANFD, CarControllerParams)
-from iqdbc.iqpilot.car.honda.values_ext import HondaFlagsIQ
+from iqdbc.lvbs.car.honda.iq_values import HondaFlagsIQ
 
 # CAN bus layout with relay
 # 0 = ACC-CAN - radar side

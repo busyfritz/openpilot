@@ -15,6 +15,7 @@ from iqdbc.car.volkswagen.speed_limit_manager import SpeedLimitManager
 from openpilot.system.proprietary_runtime._verified_import import import_verified_module
 
 iq_lvbs_alc = import_verified_module("iqpilot_alc_private", "iqpilot_private.konn3kt.iqlvbs.alc")
+vehicle_state = import_verified_module("iqpilot_alc_private", "iqpilot_private.konn3kt.iqlvbs.vehicle_state")
 
 iqpilot_path = os.path.join(os.path.dirname(__file__), '..', '..', '..')
 sys.path.insert(0, iqpilot_path)
@@ -100,8 +101,15 @@ class CarState(CarStateBase):
     self.cruise_main_switch = False
     self.motor3_stock = {}
     self.motor1_stock = {}
-    self.motor1_frame = 0
     self.motor3_frame = 0
+    self.motor1_frame = 0
+    self._odometer_store = vehicle_state.VehicleOdometerStore(CP, self._params)
+
+  def _update_odometer(self, ret: structs.CarState, raw_km: float) -> None:
+    """Publish the cluster value while proprietary Konn3kt code owns persistence."""
+    odometer_km = self._odometer_store.record(raw_km)
+    if odometer_km is not None:
+      ret.odometer = odometer_km
 
   def _apply_iq_private_flags(self, ret_iq: structs.IQCarState) -> None:
     ret_iq.alcOverrideAlert = bool(self.alcOverrideAlert)
@@ -285,6 +293,7 @@ class CarState(CarStateBase):
 
     ret.fuelGauge = pt_cp.vl["Kombi_02"]["KBI_Inhalt_Tank"] / 55.0
     ret.fuelTankLevelL = pt_cp.vl["Kombi_02"]["KBI_Inhalt_Tank"]  # raw liters for konn3kt
+    self._update_odometer(ret, pt_cp.vl["Kombi_02"]["KBI_Kilometerstand"])
 
     self.cruise_faulted = ret.accFaulted
     self._apply_iq_private_flags(ret_iq)
@@ -400,6 +409,7 @@ class CarState(CarStateBase):
     psd_06_values = main_cp.vl["PSD_06"] if self.CP.flags & VolkswagenFlags.STOCK_PSD_PRESENT else {}
     psd_06_values = pt_cp.vl["PSD_06"] if not psd_06_values and self.CP.flags & VolkswagenFlags.STOCK_PSD_06_PRESENT else psd_06_values
     diagnose_01_values = pt_cp.vl["Diagnose_01"] if self.CP.flags & VolkswagenFlags.STOCK_DIAGNOSE_01_PRESENT else {}
+    self._update_odometer(ret, pt_cp.vl["Diagnose_01"]["KBI_Kilometerstand"])
 
     if self.enable_speed_limit_predicative and not self.enable_predicative_speed_limit:
       self.enable_predicative_speed_limit = True
@@ -494,7 +504,7 @@ class CarState(CarStateBase):
     ret.gasPressed = pt_cp.vl["Motor_3"]["MO3_Pedalwert"] > 0
     ret.brake = pt_cp.vl["Bremse_5"]["BR5_Bremsdruck"] / 250.0  # FIXME: this is pressure in Bar, not sure what OP expects
     ret.brakePressed = bool(pt_cp.vl["Motor_2"]["MO2_BLS"])
-    ret.parkingBrake = False # bool(pt_cp.vl["Kombi_1"]["Bremsinfo"])
+    ret.parkingBrake = bool(pt_cp.vl["Kombi_1"]["Bremsinfo"])
 
     # Update gear and/or clutch position data.
     if self.CP.transmissionType == TransmissionType.automatic:
@@ -629,8 +639,10 @@ class CarState(CarStateBase):
 
     ret.lowSpeedAlert = self.update_low_speed_alert(ret.vEgo)
 
-    ret.fuelGauge = 0 # pt_cp.vl["Kombi_1"]["Tankinhalt"] / 55.0
-    ret.fuelTankLevelL = 0 # pt_cp.vl["Kombi_1"]["Tankinhalt"]  # raw liters for konn3kt
+    ret.fuelGauge = pt_cp.vl["Kombi_1"]["Tankinhalt"] / 55.0
+    ret.fuelTankLevelL = pt_cp.vl["Kombi_1"]["Tankinhalt"]  # raw liters for konn3kt
+    if aux_cp is not None:
+      self._update_odometer(ret, aux_cp.vl["Kombi_3"]["Kilometerstand"])
 
     if self.CP.flags & VolkswagenFlagsIQ.IQ_PQ_ACC_FTS_EPB:
       ret.cruiseState.standstill = self.CP.pcmCruise and bool(pt_cp.vl["Bremse_5"]["BR5_Stillstand"]) and ret.cruiseState.enabled
@@ -706,6 +718,7 @@ class CarState(CarStateBase):
 
     ret.fuelGauge = br_cp.vl["Kombi_02"]["KBI_Inhalt_Tank"] / 55.0
     ret.fuelTankLevelL = br_cp.vl["Kombi_02"]["KBI_Inhalt_Tank"]  # raw liters for konn3kt
+    self._update_odometer(ret, br_cp.vl["Kombi_02"]["KBI_Kilometerstand"])
 
     ret.buttonEvents = self.create_button_events(pt_cp, self.CCP.BUTTONS)
 
@@ -794,8 +807,11 @@ class CarState(CarStateBase):
       ]
     if CP.flags & VolkswagenFlags.MLB:
       pt_messages += [
-        ("Blinkmodi_01", math.nan)  # From J519 BCM (is inactive when no lights active, 50Hz when active)
+        ("Blinkmodi_01", math.nan),  # From J519 BCM (is inactive when no lights active, 50Hz when active)
+        ("Kombi_02", math.nan),  # Auxiliary-bus cluster odometer
       ]
+    else:
+      pt_messages += [("Kombi_02", math.nan)]  # Auxiliary-bus cluster odometer
     if CP.flags & VolkswagenFlags.STOCK_HCA_PRESENT:
       cam_messages += [
         ("HCA_01", 1),  # From R242 Driver assistance camera, 50Hz if steering/1Hz if not
@@ -809,7 +825,7 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_can_parsers_pq(CP):
-    aux_messages = []
+    aux_messages = [("Kombi_3", math.nan)]  # Bus 1 cluster odometer
     if CP.flags & VolkswagenFlagsIQ.IQ_PQ_ACC_FTS_EPB:
       aux_messages.append(("Motor_3", 0))
     return {
@@ -826,6 +842,7 @@ class CarState(CarStateBase):
       # TA_01 lives on bus 0 (car ECU / OP-generated when long is active).
       # math.nan → ignore_alive=True so it never contributes to can_valid.
       ("TA_01", math.nan),
+      ("Diagnose_01", math.nan),  # Bus 0 cluster odometer
     ]
     if CP.networkLocation == NetworkLocation.fwdCamera:
       pt_messages.append(("AWV_03", 1))

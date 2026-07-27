@@ -52,6 +52,22 @@ class LeadVehicle:
   fill_alpha: int = 0
 
 
+@dataclass
+class VisionDot:
+  x: float
+  y: float
+  tx: float
+  ty: float
+  radius: float
+  tradius: float
+  alpha: float = 0.0
+  talpha: float = 1.0
+  rgb: tuple[int, int, int] | None = None
+
+
+_VD_EASE = 0.4
+
+
 class ModelRenderer(Widget, IQModelRenderer):
   def __init__(self):
     Widget.__init__(self)
@@ -66,14 +82,14 @@ class ModelRenderer(Widget, IQModelRenderer):
     self._road_edge_stds = np.zeros(2, dtype=np.float32)
     self._lead_vehicles = [LeadVehicle(), LeadVehicle()]
     self._track_dots: list[LeadVehicle] = []
-    self._vision_dots: list[LeadVehicle] = []
-    self._sign_dots: list[tuple[float, float, float, rl.Color]] = []
+    self._vision_dots: list[VisionDot] = []
+    self._vt_frame = -1
     self._frame_transform: np.ndarray | None = None
     self._frame_transform_wide = False
     self._path_offset_z = HEIGHT_INIT[0]
     self._counter = -1
     self._camera_offset = ui_state.params.get("CameraOffset", return_default=True) if ui_state.active_bundle else 0.0
-    self._ambient_dots = ui_state.params.get_bool("AmbientTrackDots")
+    self._ambient_dots = bool(ui_state.params.get("AmbientTrackDots", return_default=True))
     # Initialize ModelPoints objects
     self._path = ModelPoints()
     self._lane_lines = [ModelPoints() for _ in range(4)]
@@ -127,7 +143,7 @@ class ModelRenderer(Widget, IQModelRenderer):
 
     if self._counter % 60 == 0:
       self._camera_offset = ui_state.params.get("CameraOffset", return_default=True) if ui_state.active_bundle else 0.0
-      self._ambient_dots = ui_state.params.get_bool("AmbientTrackDots")
+      self._ambient_dots = bool(ui_state.params.get("AmbientTrackDots", return_default=True))
     self._counter += 1
 
     if sm.updated['carParams']:
@@ -164,7 +180,6 @@ class ModelRenderer(Widget, IQModelRenderer):
     if self._ambient_dots:
       self._update_vision_dots(sm)
       self._draw_vision_dots()
-      self._draw_sign_dots()
 
     if render_lead_indicator and radar_state:
       if self._ambient_dots:
@@ -230,20 +245,34 @@ class ModelRenderer(Widget, IQModelRenderer):
       self._track_dots.append(LeadVehicle(center=(float(x), float(y)), radius=float(radius), sz=float(sz)))
 
   def _update_vision_dots(self, sm):
-    self._vision_dots = []
-    if (self._frame_transform is None or self._frame_transform_wide or
-        not sm.alive['iqVehicleTracks'] or not sm.valid['iqVehicleTracks']):
-      return
+    # iqVehicleTracks arrives at a few Hz; the dots are eased toward the latest
+    # detection every render frame so they glide instead of teleporting.
+    hidden = (self._frame_transform is None or
+              not sm.alive['iqVehicleTracks'] or not sm.valid['iqVehicleTracks'])
+    if not hidden:
+      vt = sm['iqVehicleTracks']
+      hidden = bool(vt.wide) != self._frame_transform_wide or vt.frameWidth == 0 or vt.frameHeight == 0
 
-    self._sign_dots = []
-    vt = sm['iqVehicleTracks']
+    if hidden:
+      for d in self._vision_dots:
+        d.talpha = 0.0
+    elif vt.frameId != self._vt_frame:
+      self._vt_frame = vt.frameId
+      self._retarget_vision_dots(vt)
+
+    for d in self._vision_dots:
+      d.x += (d.tx - d.x) * _VD_EASE
+      d.y += (d.ty - d.y) * _VD_EASE
+      d.radius += (d.tradius - d.radius) * _VD_EASE
+      d.alpha += (d.talpha - d.alpha) * _VD_EASE
+    self._vision_dots = [d for d in self._vision_dots if d.alpha > 0.02 or d.talpha > 0.0]
+
+  def _retarget_vision_dots(self, vt):
     fw, fh = vt.frameWidth, vt.frameHeight
-    if fw == 0 or fh == 0:
-      return
-
+    m = self._frame_transform
     occupied = [d.center for d in self._lead_vehicles + self._track_dots if d.center is not None]
 
-    m = self._frame_transform
+    targets = []
     for t in vt.tracks:
       is_vehicle = t.label in VEHICLE_TRACK_LABELS
       sign_color = SIGN_TRACK_COLORS.get(t.label)
@@ -256,18 +285,34 @@ class ModelRenderer(Widget, IQModelRenderer):
       if not (self._rect.x <= x <= self._rect.x + self._rect.width and
               self._rect.y <= y <= self._rect.y + self._rect.height):
         continue
-
       box_h = (t.y2 - t.y1) * fh * m[1, 1]
       radius = float(np.clip(box_h * 0.35, 14.0, 40.0))
-
       if sign_color is not None:
-        self._sign_dots.append((float(x), float(y), min(radius, 22.0), sign_color))
-        continue
+        targets.append((x, y, min(radius, 22.0), (sign_color.r, sign_color.g, sign_color.b)))
+      elif not any((x - ox) ** 2 + (y - oy) ** 2 < (radius * 2.2) ** 2 for ox, oy in occupied):
+        targets.append((x, y, radius, None))
 
-      if any((x - ox) ** 2 + (y - oy) ** 2 < (radius * 2.2) ** 2 for ox, oy in occupied):
-        continue
+    dots = self._vision_dots
+    used = [False] * len(dots)
+    for tx, ty, tr, rgb in targets:
+      best, best_d2 = -1, 1e18
+      for i, d in enumerate(dots):
+        if used[i] or (d.rgb is None) != (rgb is None):
+          continue
+        d2 = (d.x - tx) ** 2 + (d.y - ty) ** 2
+        if d2 < best_d2:
+          best, best_d2 = i, d2
+      if best >= 0 and best_d2 <= (max(tr, dots[best].radius) * 3.0) ** 2:
+        d = dots[best]
+        used[best] = True
+        d.tx, d.ty, d.tradius, d.talpha, d.rgb = tx, ty, tr, 1.0, rgb
+      else:
+        dots.append(VisionDot(x=tx, y=ty, tx=tx, ty=ty, radius=tr, tradius=tr, alpha=0.0, talpha=1.0, rgb=rgb))
+        used.append(True)
 
-      self._vision_dots.append(LeadVehicle(center=(float(x), float(y)), radius=radius, sz=radius))
+    for i, d in enumerate(dots):
+      if not used[i]:
+        d.talpha = 0.0
 
   def _update_model(self, lead, path_x_array):
     """Update model visualization data based on model message"""
@@ -411,17 +456,17 @@ class ModelRenderer(Widget, IQModelRenderer):
       draw_polygon(self._rect, self._path.projected_points, gradient=gradient)
 
   def _draw_vision_dots(self):
-    src = rl.Rectangle(0, 0, self._lead_orb.width, self._lead_orb.height)
     for dot in self._vision_dots:
-      cx, cy = dot.center
-      r = dot.radius
-      dest = rl.Rectangle(cx, cy, r * 2.0, r * 2.0)
-      rl.draw_texture_pro(self._lead_orb, src, dest, rl.Vector2(r, r), 0.0, rl.Color(255, 255, 255, 90))
-
-  def _draw_sign_dots(self):
-    for x, y, r, color in self._sign_dots:
-      rl.draw_circle(int(x), int(y), r, color)
-      rl.draw_circle_lines(int(x), int(y), r, rl.Color(255, 255, 255, 160))
+      a = dot.alpha
+      if a <= 0.02:
+        continue
+      x, y, r = int(dot.x), int(dot.y), dot.radius
+      if dot.rgb is None:
+        # soft teal glow, brighter in the center fading to transparent at the edge
+        rl.draw_circle_gradient(x, y, r, rl.Color(120, 235, 225, int(165 * a)), rl.Color(0, 150, 150, 0))
+      else:
+        rl.draw_circle_gradient(x, y, r, rl.Color(dot.rgb[0], dot.rgb[1], dot.rgb[2], int(210 * a)),
+                                rl.Color(dot.rgb[0], dot.rgb[1], dot.rgb[2], 0))
 
   def _draw_track_dots(self):
     src = rl.Rectangle(0, 0, self._lead_orb.width, self._lead_orb.height)

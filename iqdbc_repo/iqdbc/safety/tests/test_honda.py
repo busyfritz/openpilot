@@ -9,7 +9,7 @@ from iqdbc.car.structs import CarParams
 from iqdbc.safety.tests.common import CANPackerSafety, MAX_WRONG_COUNTERS
 from iqdbc.safety.tests.gas_interceptor_common import GasInterceptorSafetyTest
 
-from iqdbc.iqpilot.car.honda.values_ext import HondaSafetyFlagsIQ
+from iqdbc.lvbs.car.honda.iq_values import HondaSafetyFlagsIQ
 
 HONDA_N_COMMON_TX_MSGS = [[0xE4, 0], [0x194, 0], [0x1FA, 0], [0x30C, 0], [0x33D, 0]]
 

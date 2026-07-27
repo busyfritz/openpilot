@@ -12,16 +12,40 @@ import pytest
 from openpilot.selfdrive.controls.lib.latcontrol_torque import NNTorqueModel
 from openpilot.selfdrive.controls.lib.latcontrol_torque import TORQUE_NN_MODEL_PATH
 
+# A minimal valid NNFF model (Twilsonco format: column-vector mean/std, dense_N_W/b
+# layers). Used as a fallback so the loader logic is still exercised when no trained
+# models are shipped (they are removed pending retraining and re-added over time).
+_SYNTHETIC_MODEL = {
+  "input_size": 4,
+  "output_size": 1,
+  "input_mean": [[0.0], [0.0], [0.0], [0.0]],
+  "input_std": [[1.0], [1.0], [1.0], [1.0]],
+  "layers": [
+    {"dense_1_W": [[0.5, 0.5, 0.5, 0.5], [0.5, 0.5, 0.5, 0.5]], "dense_1_b": [[0.0], [0.0]], "activation": "sigmoid"},
+    {"dense_2_W": [[2.0, 2.0]], "dense_2_b": [[-1.0]], "activation": "identity"},
+  ],
+}
+
 MODEL_FILES = sorted(f for f in os.listdir(TORQUE_NN_MODEL_PATH) if f.endswith(".json"))
-SAMPLE = [f for f in ("HYUNDAI_IONIQ_5.json", "TOYOTA_RAV4_TSS2_2022.json", "MOCK.json") if f in MODEL_FILES] \
-         or MODEL_FILES[:3]
+if MODEL_FILES:
+  _MODEL_DIR = TORQUE_NN_MODEL_PATH
+  _NAMES = MODEL_FILES
+else:
+  import tempfile
+  _MODEL_DIR = tempfile.mkdtemp(prefix="nnff_synthetic_")
+  with open(os.path.join(_MODEL_DIR, "SYNTHETIC.json"), "w") as _f:
+    json.dump(_SYNTHETIC_MODEL, _f)
+  _NAMES = ["SYNTHETIC.json"]
+
+SAMPLE = [f for f in ("HYUNDAI_IONIQ_5.json", "TOYOTA_RAV4_TSS2_2022.json", "MOCK.json") if f in _NAMES] \
+         or _NAMES[:3]
 
 
 def _path(name):
-  return os.path.join(TORQUE_NN_MODEL_PATH, name)
+  return os.path.join(_MODEL_DIR, name)
 
 
-@pytest.mark.parametrize("name", MODEL_FILES, ids=[n[:-5] for n in MODEL_FILES])
+@pytest.mark.parametrize("name", _NAMES, ids=[n[:-5] for n in _NAMES])
 def test_every_model_loads_and_is_finite(name):
   m = NNTorqueModel(_path(name))
   assert m.input_size >= 2

@@ -189,7 +189,7 @@ class IQDevice:
 
   def _set_awake(self, on: bool):
     if on and self._params.get("DeviceBootMode", return_default=True) == 1:
-      self._params.put_bool("OffroadMode", True)
+      self._params.put_bool("IQAlwaysOffroad", True)
 
   @staticmethod
   def set_onroad_brightness(_ui_state, awake: bool, cur_brightness: float) -> float:

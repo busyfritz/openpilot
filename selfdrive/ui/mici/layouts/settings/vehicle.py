@@ -73,7 +73,7 @@ class VehicleLayoutMici(NavScroller):
                                         toggle_callback=self._on_toyota_long)
     self._hyundai_tuning = MappedParamToggle("hyundai long. tuning", "HyundaiLongitudinalTuning",
                                              ["off", "dynamic", "predictive"], [0, 1, 2])
-    self._subaru_snag = BigParamControl("stop and go (beta)", "SubaruStopAndGo")
+    self._subaru_snag = BigParamControl("creep from standstill (beta)", "SubaruStopAndGo")
     self._subaru_manual = BigParamControl("stop and go manual brake", "SubaruStopAndGoManualParkingBrake")
     self._vw_pq_hca = BigParamControl("PQ HCA status 7 mode", "pqhca5or7Toggle")
     self._vw_lateral = BigParamControl("lateral when cruise faulted", "AllowLateralWhenLongUnavailable")

@@ -8,8 +8,8 @@ from iqdbc.car.interfaces import CarStateBase
 from iqdbc.car.toyota.values import ToyotaFlags, CAR, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR, \
                                                   TSS2_CAR, RADAR_ACC_CAR, EPS_SCALE, UNSUPPORTED_DSU_CAR, \
                                                   SECOC_CAR
-from iqdbc.iqpilot.car.toyota.carstate_ext import CarStateExt
-from iqdbc.iqpilot.car.toyota.values import ToyotaFlagsIQ
+from iqdbc.lvbs.car.toyota.iq_carstate import IQCarState
+from iqdbc.lvbs.car.toyota.values import ToyotaFlagsIQ
 
 ButtonType = structs.CarState.ButtonEvent.Type
 SteerControlType = structs.CarParams.SteerControlType
@@ -26,10 +26,10 @@ TEMP_STEER_FAULTS = (0, 9, 11, 21, 25)
 PERM_STEER_FAULTS = (3, 17)
 
 
-class CarState(CarStateBase, CarStateExt):
+class CarState(CarStateBase, IQCarState):
   def __init__(self, CP, CP_IQ):
     CarStateBase.__init__(self, CP, CP_IQ)
-    CarStateExt.__init__(self, CP, CP_IQ)
+    IQCarState.__init__(self, CP, CP_IQ)
     can_define = CANDefine(DBC[CP.carFingerprint][Bus.pt])
     self.eps_torque_scale = EPS_SCALE[CP.carFingerprint] / 100.
     self.cluster_speed_hyst_gap = CV.KPH_TO_MS / 2.
@@ -210,7 +210,7 @@ class CarState(CarStateBase, CarStateExt):
 
     ret.buttonEvents = buttonEvents
 
-    CarStateExt.update(self, ret, ret_iq, can_parsers)
+    IQCarState.update(self, ret, ret_iq, can_parsers)
 
     return ret, ret_iq
 

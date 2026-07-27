@@ -129,7 +129,7 @@ class Car:
 
       self.CI = get_car(*self.can_callbacks, obd_callback(self.params), alpha_long_allowed, is_release, num_pandas, cached_params,
                         fixed_fingerprint, init_params_list_iq, is_release_iq)
-      iqpilot_interfaces.setup_interfaces(self.CI, self.params)
+      iqpilot_interfaces.apply_iq_car_config(self.CI, self.params)
       self.RI = interfaces[self.CI.CP.carFingerprint].RadarInterface(self.CI.CP, self.CI.CP_IQ)
       self.CP = self.CI.CP
       self.CP_IQ = self.CI.CP_IQ

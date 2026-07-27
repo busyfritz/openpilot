@@ -4,6 +4,7 @@ from iqdbc.car.tesla.teslacan import TeslaCAN
 from iqdbc.car.tesla.radar_interface import RADAR_START_ADDR
 from iqdbc.car.tesla.carcontroller import CarController
 from iqdbc.car.tesla.values import CAR
+from iqdbc.can import CANPacker, CANParser
 
 
 class TestTeslaFingerprint:
@@ -30,6 +31,19 @@ class TestTeslaCan:
   class DummyPacker:
     def make_can_msg(self, name, bus, values):
       return name, bus, values
+
+  def test_vehicle_bus_odometer_decodes_kilometers(self):
+    packer = CANPacker("tesla_model3_vehicle")
+    parser = CANParser("tesla_model3_vehicle", [("ID3B6UI_odometer", 1)], 1)
+
+    message = packer.make_can_msg("ID3B6UI_odometer", 1, {
+      "UI_odometer": 29150.377,
+      "UI_odometerCounter": 1,
+      "UI_odometerChecksum": 0,
+    })
+    parser.update([1_000_000_000, [message]])
+
+    assert parser.vl["ID3B6UI_odometer"]["UI_odometer"] == 29150.377
 
   def test_longitudinal_command_does_not_reference_missing_jerk_attr(self):
     CP = CarInterface.get_non_essential_params(CAR.TESLA_MODEL_3)

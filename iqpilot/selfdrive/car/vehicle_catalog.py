@@ -81,5 +81,5 @@ def _write(vehicles: dict[str, dict], basedir: str = BASEDIR) -> str:
 
 
 if __name__ == "__main__":
-  from iqdbc.iqpilot.car.platform_list import get_car_list
+  from iqdbc.lvbs.car.platform_list import get_car_list
   print("wrote", _write(get_car_list()))

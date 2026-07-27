@@ -5,8 +5,8 @@ from iqdbc.car.common.conversions import Conversions as CV
 from iqdbc.car.interfaces import CarStateBase
 from iqdbc.car.gm.values import DBC, AccState, CruiseButtons, STEER_THRESHOLD, SDGM_CAR, ALT_ACCS
 
-from iqdbc.iqpilot.car.gm.carstate_ext import CarStateExt
-from iqdbc.iqpilot.car.gm.values_ext import GMFlagsIQ
+from iqdbc.lvbs.car.gm.iq_carstate import IQCarState
+from iqdbc.lvbs.car.gm.iq_values import GMFlagsIQ
 
 ButtonType = structs.CarState.ButtonEvent.Type
 TransmissionType = structs.CarParams.TransmissionType
@@ -18,10 +18,10 @@ BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.D
                 CruiseButtons.MAIN: ButtonType.mainCruise, CruiseButtons.CANCEL: ButtonType.cancel}
 
 
-class CarState(CarStateBase, CarStateExt):
+class CarState(CarStateBase, IQCarState):
   def __init__(self, CP, CP_IQ):
     CarStateBase.__init__(self, CP, CP_IQ)
-    CarStateExt.__init__(self, CP, CP_IQ)
+    IQCarState.__init__(self, CP, CP_IQ)
     can_define = CANDefine(DBC[CP.carFingerprint][Bus.pt])
     self.shifter_values = can_define.dv["ECMPRDNL2"]["PRNDL2"]
     self.cluster_speed_hyst_gap = CV.KPH_TO_MS / 2.
@@ -163,7 +163,7 @@ class CarState(CarStateBase, CarStateExt):
     if ret.vEgo < self.CP.minSteerSpeed:
       ret.lowSpeedAlert = True
 
-    CarStateExt.update(self, ret, can_parsers)
+    IQCarState.update(self, ret, can_parsers)
 
     return ret, ret_iq
 

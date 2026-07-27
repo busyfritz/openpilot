@@ -200,6 +200,9 @@ class HardwareBase(ABC):
   def reboot_modem(self):
     pass
 
+  def recover_sim_detection(self) -> bool:
+    return False
+
   def get_networks(self):
     return None
 

@@ -4,7 +4,7 @@ from iqdbc.car.rivian.carcontroller import CarController
 from iqdbc.car.rivian.carstate import CarState
 from iqdbc.car.rivian.radar_interface import RadarInterface
 from iqdbc.car.rivian.values import RivianSafetyFlags
-from iqdbc.iqpilot.car.rivian.values import RivianFlagsIQ
+from iqdbc.lvbs.car.rivian.values import RivianFlagsIQ
 
 
 class CarInterface(CarInterfaceBase):
@@ -39,6 +39,8 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def _get_params_iq(stock_cp: structs.CarParams, ret: structs.IQCarParams, candidate, fingerprint: dict[int, dict[int, int]],
                      car_fw: list[structs.CarParams.CarFw], alpha_long: bool, is_release_iq: bool, docs: bool) -> structs.IQCarParams:
+    # Longitudinal harness upgrade advertises msg 0x31a on bus 5; when present it
+    # unlocks radar, blind-spot and openpilot longitudinal on Rivian.
     if 0x31a in fingerprint[5]:
       ret.flags |= RivianFlagsIQ.LONGITUDINAL_HARNESS_UPGRADE.value
       stock_cp.radarUnavailable = False

@@ -13,8 +13,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.common.simple_kalman import KF1D
 
 from iqdbc.car import structs
-from iqdbc.car.hyundai.values import HyundaiFlags
-from iqdbc.iqpilot.car.hyundai.values import HyundaiFlagsIQ
+from iqdbc.car.hyundai.values import HyundaiFlags, HyundaiFlagsIQ
 from openpilot.iqpilot.selfdrive.controls.lib.custom_stop_distance import CustomStopDistance
 
 

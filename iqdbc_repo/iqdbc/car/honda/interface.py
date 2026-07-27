@@ -11,7 +11,7 @@ from iqdbc.car.honda.carstate import CarState
 from iqdbc.car.honda.radar_interface import RadarInterface
 from iqdbc.car.interfaces import CarInterfaceBase
 
-from iqdbc.iqpilot.car.honda.values_ext import HondaFlagsIQ, HondaSafetyFlagsIQ
+from iqdbc.lvbs.car.honda.iq_values import HondaFlagsIQ, HondaSafetyFlagsIQ
 
 TransmissionType = structs.CarParams.TransmissionType
 

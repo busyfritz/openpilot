@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 from cereal import custom
 from iqdbc.car import structs
-from iqdbc.car.hyundai.values import HyundaiFlags
+from iqdbc.car.hyundai.values import HyundaiFlags, HyundaiFlagsIQ
 from openpilot.iqpilot.sab.behavior import SteeringAssistanceBehavior
 from openpilot.iqpilot.selfdrive.selfdrived.events import IQEvents
 from openpilot.selfdrive.selfdrived.events import Events
@@ -39,7 +39,7 @@ class MockParams:
 
 
 def make_selfdrive(cp_flags: int, brand: str = "hyundai", main_cruise_allowed: bool = False,
-                   aol_enabled: bool = True):
+                   aol_enabled: bool = True, cp_iq_flags: int = 0):
   cp = SimpleNamespace(
     brand=brand,
     flags=cp_flags,
@@ -47,7 +47,7 @@ def make_selfdrive(cp_flags: int, brand: str = "hyundai", main_cruise_allowed: b
     notCar=False,
     safetyModel=structs.CarParams.SafetyModel.noOutput,
   )
-  cp_iq = SimpleNamespace(flags=0)
+  cp_iq = SimpleNamespace(flags=cp_iq_flags)
   return SimpleNamespace(
     CP=cp,
     CP_IQ=cp_iq,
@@ -100,10 +100,12 @@ def make_vw_car_state(cruise_available: bool, cruise_fault_lateral: bool = False
 
 
 def test_hyundai_lkas_button_can_arm_guidance_before_lateral_available():
-  selfdrive = make_selfdrive(HyundaiFlags.HAS_LDA_BUTTON)
+  selfdrive = make_selfdrive(0, cp_iq_flags=HyundaiFlagsIQ.HAS_LFA_BUTTON)
   guidance = SteeringAssistanceBehavior(selfdrive)
+  car_state = make_car_state()
+  car_state.buttonEvents = [structs.CarState.ButtonEvent(pressed=True, type=ButtonType.lfaButton)]
 
-  guidance.update_events(make_car_state())
+  guidance.update_events(car_state)
 
   assert selfdrive.events_iq.has(EventNameIQ.alcEngaged)
 

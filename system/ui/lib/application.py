@@ -26,7 +26,7 @@ from openpilot.system.hardware import HARDWARE, PC
 from openpilot.system.ui.lib.multilang import multilang
 from openpilot.common.realtime import Ratekeeper
 
-from openpilot.system.ui.iqpilot.lib.application import IQAppHooks
+from openpilot.system.ui.iqwidgets.lib.application import IQAppHooks
 from openpilot.system.ui.lib.screen_recorder import ScreenRecorder
 
 _DEFAULT_FPS = int(os.getenv("FPS", {'tizi': 20, 'tici': 20}.get(HARDWARE.get_device_type(), 60)))

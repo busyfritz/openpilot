@@ -33,10 +33,19 @@ EMOJI_REGEX = re.compile(
   flags=re.UNICODE
 )
 
+_emoji_font_loaded = False
+
 def _load_emoji_font() -> ImageFont.FreeTypeFont | None:
-  global _emoji_font
-  if _emoji_font is None:
-    _emoji_font = ImageFont.truetype(str(FONT_DIR.joinpath("NotoColorEmoji.ttf")), 109)
+  global _emoji_font, _emoji_font_loaded
+  if not _emoji_font_loaded:
+    _emoji_font_loaded = True
+    try:
+      # FONT_DIR is an importlib.resources path. Inside the setup zipapp it points into the archive,
+      # so str() yields a path through the .zip that PIL can't open ("cannot open resource"). Read
+      # the bytes and hand PIL a file object so it works both on disk and inside the zipapp.
+      _emoji_font = ImageFont.truetype(io.BytesIO(FONT_DIR.joinpath("NotoColorEmoji.ttf").read_bytes()), 109)
+    except Exception:
+      _emoji_font = None  # never crash the whole UI over an emoji glyph
   return _emoji_font
 
 def find_emoji(text):
@@ -44,12 +53,15 @@ def find_emoji(text):
 
 def emoji_tex(emoji):
   if emoji not in _cache:
+    font = _load_emoji_font()
+    if font is None:
+      return None
     img = Image.new("RGBA", (128, 128), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
-    draw.text((0, 0), emoji, font=_load_emoji_font(), embedded_color=True)
+    draw.text((0, 0), emoji, font=font, embedded_color=True)
     with io.BytesIO() as buffer:
       img.save(buffer, format="PNG")
       l = buffer.tell()
       buffer.seek(0)
       _cache[emoji] = rl.load_texture_from_image(rl.load_image_from_memory(".png", buffer.getvalue(), l))
-  return _cache[emoji]
+  return _cache.get(emoji)

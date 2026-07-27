@@ -7,7 +7,7 @@ from iqdbc.car.toyota.values import Ecu, CAR, DBC, ToyotaFlags, CarControllerPar
                                                   ToyotaSafetyFlags, UNSUPPORTED_DSU_CAR
 from iqdbc.car.disable_ecu import disable_ecu
 from iqdbc.car.interfaces import CarInterfaceBase
-from iqdbc.iqpilot.car.toyota.values import ToyotaFlagsIQ, ToyotaSafetyFlagsIQ
+from iqdbc.lvbs.car.toyota.values import ToyotaFlagsIQ, ToyotaSafetyFlagsIQ
 
 SteerControlType = structs.CarParams.SteerControlType
 

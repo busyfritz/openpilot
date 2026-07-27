@@ -4,152 +4,140 @@ Copyright © IQ.Lvbs, apart of Project Teal Lvbs, All Rights Reserved, licensed 
 
 from cereal import messaging, custom
 
+from openpilot.common.params import Params
 from openpilot.common.realtime import DT_MDL
 from openpilot.iqpilot.selfdrive.selfdrived.events import IQEvents
 
-PATH_QUEUE_GATE = 30
-LEAD_GROWTH_GATE = 1.0
-TRIGGER_HOLD_S = 0.3
+PARAM_PATH = "EndToEndAlert"
+PARAM_LEAD = "EndToEndLeadAlert"
+PARAM_STRIDE_S = 2.0
+
+SETTLE_S = 1.0
+CONFIRM_S = 0.4
+ROLL_MPS = 0.3
+
+HORIZON_TAIL = 5
+PATH_SPEED_MPS = 3.0
+
+LEAD_QUEUE_M = 12.0
+LEAD_SPEED_MPS = 1.0
+LEAD_GAP_M = 0.5
 
 
-class TriggerPhase:
-  IDLE = 0
-  ARMED = 1
-  FIRED = 2
+class _Confirm:
+  def __init__(self, window_s: float):
+    self._window = window_s
+    self._held = 0.0
+    self._spent = False
+
+  def clear(self) -> None:
+    self._held = 0.0
+    self._spent = False
+
+  def poll(self, holds: bool) -> bool:
+    if self._spent:
+      return False
+    self._held = self._held + DT_MDL if holds else 0.0
+    if self._held < self._window:
+      return False
+    self._spent = True
+    return True
 
 
-class StopAndLeadChimeEngine:
+class _Dwell:
   def __init__(self):
-    self._frame = -1
-    self._toggle = {"path_queue": False, "lead_depart": False}
-    self._trigger = {
-      "path_queue": {"phase": TriggerPhase.IDLE, "last_phase": TriggerPhase.IDLE, "fired": False, "hold_ticks": 0, "anchor": -1.0},
-      "lead_depart": {"phase": TriggerPhase.IDLE, "last_phase": TriggerPhase.IDLE, "fired": False, "hold_ticks": 0, "anchor": -1.0},
-    }
-    self._standstill_gate = {"open": False, "was_open": False, "moving_frame": -1}
-    self._lead_state = {"visible": False, "primed": False, "armed": False, "warmup_ticks": 0}
+    self.seconds = 0.0
+    self.lead_floor = float('inf')
 
-  def _read_toggles(self) -> None:
-    self._toggle["path_queue"] = False
-    self._toggle["lead_depart"] = False
+  def clear(self) -> None:
+    self.seconds = 0.0
+    self.lead_floor = float('inf')
 
-  def _mark_motion(self, standstill: bool, speed_mps: float) -> bool:
-    is_moving = (not standstill) and speed_mps > 0.1
-    if is_moving:
-      self._standstill_gate["moving_frame"] = self._frame
-    return is_moving
+  def tick(self, lead_range: float | None) -> None:
+    self.seconds += DT_MDL
+    if lead_range is not None:
+      self.lead_floor = min(self.lead_floor, lead_range)
 
-  def _within_motion_grace(self) -> bool:
-    stamp = self._standstill_gate["moving_frame"]
-    if stamp == -1:
-      return True
-    return (self._frame - stamp) * DT_MDL < 2.0
+  @property
+  def settled(self) -> bool:
+    return self.seconds >= SETTLE_S
 
-  def _update_gate(self, standstill: bool, speed_mps: float, gas_pressed: bool, controls_enabled: bool) -> None:
-    moving = self._mark_motion(standstill, speed_mps)
-    self._standstill_gate["open"] = (not moving) and (not gas_pressed) and (not controls_enabled) and (not self._within_motion_grace())
+  @property
+  def queued(self) -> bool:
+    return self.lead_floor < LEAD_QUEUE_M
 
-  @staticmethod
-  def _path_end_x(path_x):
-    return float(path_x[-1]) if len(path_x) else 0.0
 
-  def _path_queue_signal(self, path_x) -> bool:
-    node = self._trigger["path_queue"]
-    if node["phase"] != TriggerPhase.ARMED:
-      node["hold_ticks"] = 0
-      return False
-    node["hold_ticks"] = node["hold_ticks"] + 1 if self._path_end_x(path_x) > PATH_QUEUE_GATE else 0
-    return node["hold_ticks"] * DT_MDL > TRIGGER_HOLD_S
+class EndToEndAlertEngine:
+  def __init__(self):
+    self._params = Params()
+    self._on = {"path": False, "lead": False}
+    self._elapsed_since_read = PARAM_STRIDE_S
+    self._dwell = _Dwell()
+    self._confirm = {"path": _Confirm(CONFIRM_S), "lead": _Confirm(CONFIRM_S)}
+    self._fired = {"path": False, "lead": False}
 
-  def _update_lead_prime(self, seen: bool, distance_m: float) -> None:
-    near_lead = seen and distance_m < 8.0
-    opened_now = self._standstill_gate["open"] and not self._standstill_gate["was_open"]
-
-    if opened_now and near_lead:
-      self._lead_state["primed"] = True
-    elif not self._standstill_gate["open"]:
-      self._lead_state["primed"] = False
-
-    if self._standstill_gate["open"] and self._lead_state["primed"] and near_lead:
-      self._lead_state["warmup_ticks"] += 1
-      self._lead_state["armed"] = self._lead_state["warmup_ticks"] * DT_MDL >= 1.0
+  def _refresh_params(self) -> None:
+    self._elapsed_since_read += DT_MDL
+    if self._elapsed_since_read < PARAM_STRIDE_S:
       return
-
-    self._lead_state["warmup_ticks"] = 0
-    self._lead_state["armed"] = False
-
-  def _lead_depart_signal(self, distance_m: float) -> bool:
-    node = self._trigger["lead_depart"]
-    if node["phase"] != TriggerPhase.ARMED:
-      node["anchor"] = -1.0
-      node["hold_ticks"] = 0
-      return False
-
-    if node["anchor"] == -1.0 or distance_m < node["anchor"]:
-      node["anchor"] = distance_m
-
-    grew = node["anchor"] != -1.0 and (distance_m - node["anchor"]) > LEAD_GROWTH_GATE
-    node["hold_ticks"] = node["hold_ticks"] + 1 if grew else 0
-    return node["hold_ticks"] * DT_MDL > TRIGGER_HOLD_S
-
-  def _sample_inputs(self, sm: messaging.SubMaster):
-    cs = sm['carState']
-    cc = sm['carControl']
-    lead_one = sm['radarState'].leadOne
-
-    self._lead_state["visible"] = lead_one.status
-    lead_distance = lead_one.dRel
-
-    self._update_gate(cs.standstill, cs.vEgo, cs.gasPressed, cc.enabled)
-    queue_fire = self._path_queue_signal(sm['modelV2'].position.x)
-    self._update_lead_prime(self._lead_state["visible"], lead_distance)
-    lead_fire = self._lead_depart_signal(lead_distance)
-
-    self._standstill_gate["was_open"] = self._standstill_gate["open"]
-    return queue_fire, lead_fire
+    self._elapsed_since_read = 0.0
+    self._on["path"] = self._params.get_bool(PARAM_PATH)
+    self._on["lead"] = self._params.get_bool(PARAM_LEAD)
 
   @staticmethod
-  def _step_phase(phase: int, enabled: bool, allowed: bool, fired: bool) -> tuple[int, bool]:
-    if phase == TriggerPhase.IDLE:
-      return (TriggerPhase.ARMED, fired) if (allowed and enabled) else (phase, fired)
-    if not allowed or not enabled:
-      return TriggerPhase.IDLE, fired
-    if phase == TriggerPhase.ARMED and fired:
-      return TriggerPhase.FIRED, fired
-    return phase, fired
+  def _car_holds_long(sm: messaging.SubMaster) -> bool:
+    # AOL steers without raising selfdriveState.enabled, so the pair reads as long authority
+    return bool(sm['selfdriveState'].enabled or sm['carState'].cruiseState.enabled)
 
-  def _advance_trigger(self, key: str, enabled: bool, allowed: bool, fired: bool) -> None:
-    node = self._trigger[key]
-    node["last_phase"] = node["phase"]
-    node["phase"], node["fired"] = self._step_phase(node["phase"], enabled, allowed, fired)
+  @staticmethod
+  def _halted(cs) -> bool:
+    return bool(cs.standstill) or abs(cs.vEgo) < ROLL_MPS
+
+  @staticmethod
+  def _horizon_speed(model) -> float:
+    # capnp list readers reject slices
+    samples = model.velocity.x
+    count = len(samples)
+    if count < HORIZON_TAIL:
+      return 0.0
+    return sum(samples[i] for i in range(count - HORIZON_TAIL, count)) / HORIZON_TAIL
+
+  def _rearm(self) -> None:
+    self._dwell.clear()
+    for gate in self._confirm.values():
+      gate.clear()
 
   def update(self, sm: messaging.SubMaster, iq_events: IQEvents) -> None:
-    self._read_toggles()
-    queue_fire, lead_fire = self._sample_inputs(sm)
+    self._refresh_params()
+    self._fired["path"] = self._fired["lead"] = False
 
-    self._advance_trigger("path_queue", self._toggle["path_queue"], self._standstill_gate["open"] and not self._lead_state["visible"], queue_fire)
-    self._advance_trigger("lead_depart", self._toggle["lead_depart"], self._standstill_gate["open"] and self._lead_state["armed"], lead_fire)
+    cs = sm['carState']
+    lead = sm['radarState'].leadOne
+    lead_range = float(lead.dRel) if lead.status else None
 
-    if self._trigger["path_queue"]["fired"] or self._trigger["lead_depart"]["fired"]:
+    if not self._halted(cs) or cs.gasPressed or self._car_holds_long(sm):
+      self._rearm()
+      return
+
+    self._dwell.tick(lead_range)
+    if not self._dwell.settled:
+      return
+
+    if self._on["path"] and lead_range is None:
+      opened = self._horizon_speed(sm['modelV2']) > PATH_SPEED_MPS
+      self._fired["path"] = self._confirm["path"].poll(opened)
+
+    if self._on["lead"] and lead_range is not None and self._dwell.queued:
+      pulling = lead.vLead > LEAD_SPEED_MPS and (lead_range - self._dwell.lead_floor) > LEAD_GAP_M
+      self._fired["lead"] = self._confirm["lead"].poll(pulling)
+
+    if self._fired["path"] or self._fired["lead"]:
       iq_events.add(custom.IQOnroadEvent.EventName.e2eChime)
 
-    self._frame += 1
+  @property
+  def path_alert(self) -> bool:
+    return self._fired["path"]
 
   @property
-  def queue_alert(self):
-    return self._trigger["path_queue"]["fired"]
-
-  @queue_alert.setter
-  def queue_alert(self, payload):
-    self._trigger["path_queue"]["fired"] = bool(payload)
-
-  @property
-  def lead_alert(self):
-    return self._trigger["lead_depart"]["fired"]
-
-  @lead_alert.setter
-  def lead_alert(self, payload):
-    self._trigger["lead_depart"]["fired"] = bool(payload)
-
-
-E2EAlertsHelper = StopAndLeadChimeEngine
+  def lead_alert(self) -> bool:
+    return self._fired["lead"]

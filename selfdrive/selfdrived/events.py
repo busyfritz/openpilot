@@ -82,6 +82,8 @@ def below_steer_speed_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.S
 def too_distracted_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
   if sm['driverMonitoringState'].lockout:
     mins_left = sm['driverMonitoringState'].lockoutMinutesRemaining
+    if mins_left <= 0:
+      return NoEntryAlert("Distraction Level Too High", priority=Priority.HIGH)
     return NoEntryAlert("Too Distracted", f"{mins_left} minute{'s' if mins_left != 1 else ''} Left", priority=Priority.HIGH)
   return NoEntryAlert("Pay Attention to Engage", priority=Priority.HIGH)
 
@@ -233,7 +235,8 @@ def invalid_lkas_setting_alert(CP: car.CarParams, CS: car.CarState, sm: messagin
   return NormalPermanentAlert(title, text)
 
 
-def invalid_lkas_setting_no_entry_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
+def invalid_lkas_setting_no_entry_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster,
+                                        metric: bool, soft_disable_time: int, personality) -> Alert:
   if CP.brand == "tesla":
     return NoEntryAlert("FSD / Autosteer is active", alert_text_1="Dashcam Mode")
   return NoEntryAlert("Invalid LKAS setting")

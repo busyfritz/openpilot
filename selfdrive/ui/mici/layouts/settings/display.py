@@ -27,7 +27,7 @@ class DisplayLayoutMici(NavScroller):
     self._force_mici = BigParamControl("force mici UI", "ForceSmallUI")
     self._display_bright = MappedParamToggle("display brightness", "Brightness",
                                              _DISPLAY_BRIGHT_OPTIONS, _DISPLAY_BRIGHT_VALUES)
-    self._onroad_bright = MappedParamToggle("onroad brightness", "OnroadScreenOffBrightness",
+    self._onroad_bright = MappedParamToggle("driving brightness", "OnroadScreenOffBrightness",
                                             _ONROAD_BRIGHT_OPTIONS, _ONROAD_BRIGHT_VALUES)
     self._delay = MappedParamToggle("brightness delay", "OnroadScreenOffTimer",
                                     _DELAY_OPTIONS, _DELAY_VALUES)

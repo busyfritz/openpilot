@@ -2,8 +2,10 @@
 import unittest
 
 from iqdbc.car.nissan.values import NissanSafetyFlags
-from iqdbc.iqpilot.car.nissan.values import NissanSafetyFlagsIQ
 from iqdbc.car.structs import CarParams
+
+# NISSAN_PARAM_IQ_LEAF in safety/modes/nissan.h (IQ safety framework flag)
+NISSAN_PARAM_IQ_LEAF = 1
 from iqdbc.safety.tests.libsafety import libsafety_py
 import iqdbc.safety.tests.common as common
 from iqdbc.safety.tests.common import CANPackerSafety
@@ -105,7 +107,7 @@ class TestNissanLeafSafety(TestNissanSafety):
   def setUp(self):
     self.packer = CANPackerSafety("nissan_leaf_2018_generated")
     self.safety = libsafety_py.libsafety
-    self.safety.set_current_safety_param_iq(NissanSafetyFlagsIQ.LEAF)
+    self.safety.set_current_safety_param_iq(NISSAN_PARAM_IQ_LEAF)
     self.safety.set_safety_hooks(CarParams.SafetyModel.nissan, 0)
     self.safety.init_tests()
 

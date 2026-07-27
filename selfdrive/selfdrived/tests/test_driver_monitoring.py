@@ -30,3 +30,11 @@ def test_driver_monitoring_lockout_alert():
 
   assert alert.alert_text_1 == "5 minutes Left"
   assert alert.alert_text_2 == "Too Distracted"
+
+
+def test_legacy_driver_monitoring_lockout_alert():
+  callback = EVENTS[EventName.tooDistracted][ET.NO_ENTRY]
+  sm = {'driverMonitoringState': SimpleNamespace(lockout=True, lockoutMinutesRemaining=0)}
+  alert = callback(None, None, sm, False, 0, None)
+
+  assert alert.alert_text_2 == "Distraction Level Too High"

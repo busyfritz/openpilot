@@ -17,7 +17,7 @@ from openpilot.common.params import Params, ParamKeyFlag
 from openpilot.common.text_window import TextWindow
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.loggerd.crash_recovery import recover_unclean_segments
-from openpilot.system.manager.helpers import unblock_stdout, write_onroad_params, save_bootlog, heal_param_perms, migrate_renamed_params
+from openpilot.system.manager.helpers import unblock_stdout, write_onroad_params, save_bootlog, heal_param_perms
 from openpilot.system.manager.process import ensure_running
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.iqpilot.konn3kt.registration import register, UNREGISTERED_DONGLE_ID
@@ -40,7 +40,6 @@ def manager_init() -> None:
   build_metadata = get_build_metadata()
 
   params = Params()
-  migrate_renamed_params(params)  # REVERT ME! sunny->IQ param key migration (runs before defaults are filled)
   params.clear_all(ParamKeyFlag.CLEAR_ON_MANAGER_START)
   params.clear_all(ParamKeyFlag.CLEAR_ON_ONROAD_TRANSITION)
   params.clear_all(ParamKeyFlag.CLEAR_ON_OFFROAD_TRANSITION)
@@ -50,7 +49,7 @@ def manager_init() -> None:
 
   # device boot mode
   if params.get("DeviceBootMode") == 1:  # start in Always Offroad mode
-    params.put_bool("OffroadMode", True)
+    params.put_bool("IQAlwaysOffroad", True)
 
   if params.get_bool("RecordFrontLock"):
     params.put_bool("RecordFront", True)

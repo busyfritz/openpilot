@@ -10,7 +10,7 @@ class VisualsLayoutMici(NavScroller):
   def __init__(self):
     super().__init__()
     self._blind_spot = BigParamControl("Blind Spot Warnings", "BlindSpot")
-    self._steering_arc = BigParamControl("Steering Arc", "TorqueBar")
+    self._steering_arc = BigParamControl("Steering Effort Arc", "TorqueBar")
     self._road_name = BigParamControl("Road Name", "RoadNameToggle")
     self._turn_signals = BigParamControl("Turn Signals", "ShowTurnSignals")
     self._accel_bar = BigParamControl("Acceleration Bar", "RocketFuel")

@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 try:
   from iqdbc.car.tesla.carcontroller import get_safety_CP
-  from iqdbc.iqpilot.car.tesla.values import TeslaSafetyFlagsIQ
+  from iqdbc.lvbs.car.tesla.values import TeslaSafetyFlagsIQ
 except ImportError:
   pytest.skip("requires openpilot dependencies", allow_module_level=True)
 

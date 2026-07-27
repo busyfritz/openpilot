@@ -8,8 +8,8 @@ import pyray as rl
 from openpilot.common.params import Params
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.multilang import tr
-from openpilot.system.ui.iqpilot.widgets.list_view import IQListItem, IQToggleAction, SafeIQToggleAction
-from openpilot.system.ui.iqpilot.widgets.list_view import OptionControl
+from openpilot.system.ui.iqwidgets.widgets.list_view import IQListItem, IQToggleAction, SafeIQToggleAction
+from openpilot.system.ui.iqwidgets.widgets.list_view import OptionControl
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.network import NavButton
 from openpilot.system.ui.widgets.scroller_tici import Scroller

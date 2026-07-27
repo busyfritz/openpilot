@@ -12,8 +12,7 @@ from iqdbc.car import structs
 from openpilot.common.realtime import DT_CTRL
 from iqdbc.safety import ALTERNATIVE_EXPERIENCE
 from openpilot.selfdrive.selfdrived.events import ET
-from iqdbc.car.hyundai.values import HyundaiFlags
-from iqdbc.iqpilot.car.hyundai.values import HyundaiFlagsIQ, HyundaiSafetyFlagsIQ
+from iqdbc.car.hyundai.values import HyundaiFlags, HyundaiFlagsIQ, HyundaiSafetyFlagsIQ
 from openpilot.selfdrive.selfdrived.state import SOFT_DISABLE_TIME
 from cereal import log, custom
 
@@ -255,7 +254,8 @@ _BTN = structs.CarState.ButtonEvent.Type
 _GEAR = structs.CarState.GearShifter
 
 _CRUISE_SET_TAPS = frozenset((_BTN.accelCruise, _BTN.resumeCruise, _BTN.decelCruise, _BTN.setCruise))
-_HYUNDAI_LDA_MASK = HyundaiFlags.HAS_LDA_BUTTON | HyundaiFlags.CANFD
+_LATERAL_TOGGLE_BUTTONS = (_BTN.lkas, _BTN.lfaButton)
+_HYUNDAI_LDA_MASK = HyundaiFlags.CANFD
 
 # While a lateral-only session rides through a pause, these stock blockers are
 # swapped for their silent IQ twins. Order here is not load-bearing (each row
@@ -295,7 +295,7 @@ class SteeringAssistanceBehavior:
   def _apply_brand_capabilities(self):
     brand = self.CP.brand
     self.no_main_cruise = brand in BRANDS_WITHOUT_MAIN_CRUISE_TOGGLE
-    lda_capable = bool(self.CP.flags & _HYUNDAI_LDA_MASK)
+    lda_capable = bool(self.CP.flags & _HYUNDAI_LDA_MASK) or bool(self.CP_IQ.flags & HyundaiFlagsIQ.HAS_LFA_BUTTON)
     self.hkg_allow = brand == "hyundai" and lda_capable
 
   def _reload_preferences(self, full: bool = False):
@@ -461,7 +461,7 @@ class SteeringAssistanceBehavior:
     for be in cs.buttonEvents:
       if be.type == _BTN.cancel and long_dropped_out:
         self._emit(_Q.speedManually)
-      if not (be.type == _BTN.lkas and be.pressed and self._lateral_offered(cs)):
+      if not (be.type in _LATERAL_TOGGLE_BUTTONS and be.pressed and self._lateral_offered(cs)):
         continue
       if not self.enabled:
         self._emit(_Q.alcEngaged)

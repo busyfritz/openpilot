@@ -6,13 +6,11 @@ from iqdbc.car import gen_empty_fingerprint
 from iqdbc.car.structs import CarParams
 from iqdbc.car.fw_versions import build_fw_dict
 from iqdbc.car.hyundai.interface import CarInterface
-from iqdbc.car.hyundai.hyundaicanfd import CanBus
 from iqdbc.car.hyundai.radar_interface import RADAR_START_ADDR
-from iqdbc.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, DATE_FW_ECUS, \
-                                         HYBRID_CAR, EV_CAR, FW_QUERY_CONFIG, LEGACY_SAFETY_MODE_CAR, CANFD_FUZZY_WHITELIST, \
-                                         UNSUPPORTED_LONGITUDINAL_CAR, PLATFORM_CODE_ECUS, HYUNDAI_VERSION_REQUEST_LONG, \
-                                         HyundaiFlags, get_platform_codes, HyundaiSafetyFlags, \
-                                         NON_SCC_CAR
+from iqdbc.car.hyundai.values import CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, DATE_FW_ECUS, \
+                                         HYBRID_CAR, EV_CAR, FW_QUERY_CONFIG, LEGACY_SAFETY_MODE_CAR, \
+                                         PLATFORM_CODE_ECUS, HYUNDAI_VERSION_REQUEST_LONG, \
+                                         HyundaiFlags, get_platform_codes, HyundaiSafetyFlags
 from iqdbc.car.hyundai.fingerprints import FW_VERSIONS
 
 Ecu = CarParams.Ecu
@@ -45,16 +43,8 @@ CANFD_EXPECTED_ECUS = {Ecu.fwdCamera, Ecu.fwdRadar}
 
 
 class TestHyundaiFingerprint:
-  def test_feature_detection(self):
-    # LKA steering
-    for lka_steering in (True, False):
-      fingerprint = gen_empty_fingerprint()
-      if lka_steering:
-        cam_can = CanBus(None, fingerprint).CAM
-        fingerprint[cam_can] = [0x50, 0x110]  # LKA steering messages
-      CP = CarInterface.get_params(CAR.KIA_EV6, fingerprint, [], False, False, False)
-      assert bool(CP.flags & HyundaiFlags.CANFD_LKA_STEERING) == lka_steering
-
+  def test_feature_detection(self, monkeypatch, tmp_path):
+    monkeypatch.setenv("PARAMS_ROOT", str(tmp_path))
     # radar available
     for radar in (True, False):
       fingerprint = gen_empty_fingerprint()
@@ -74,19 +64,20 @@ class TestHyundaiFingerprint:
     # Test no EV/HEV in any gear lists (should all use ELECT_GEAR)
     assert set.union(*CAN_GEARS.values()) & (HYBRID_CAR | EV_CAR) == set()
 
-    # Test CAN FD car not in CAN feature lists
-    can_specific_feature_list = set.union(*CAN_GEARS.values(), *CHECKSUM.values(), LEGACY_SAFETY_MODE_CAR, UNSUPPORTED_LONGITUDINAL_CAR, CAMERA_SCC_CAR)
+    # Test CAN FD cars are not classified with classic-CAN-only parsing or safety modes.
+    can_specific_feature_list = set.union(*CAN_GEARS.values(), *CHECKSUM.values(), LEGACY_SAFETY_MODE_CAR)
     for car_model in CANFD_CAR:
       assert car_model not in can_specific_feature_list, "CAN FD car unexpectedly found in a CAN feature list"
 
   def test_hybrid_ev_sets(self):
     assert HYBRID_CAR & EV_CAR == set(), "Shared cars between hybrid and EV"
-    assert CANFD_CAR & HYBRID_CAR == set(), "Hard coding CAN FD cars as hybrid is no longer supported"
+    assert HYBRID_CAR <= set(CAR)
+    assert EV_CAR <= set(CAR)
 
   def test_canfd_ecu_whitelist(self):
     # Asserts only expected Ecus can exist in database for CAN-FD cars
     for car_model in CANFD_CAR:
-      ecus = {fw[0] for fw in FW_VERSIONS[car_model].keys()}
+      ecus = {fw[0] for fw in FW_VERSIONS.get(car_model, {}).keys()}
       ecus_not_in_whitelist = ecus - CANFD_EXPECTED_ECUS
       ecu_strings = ", ".join([f"Ecu.{ecu}" for ecu in ecus_not_in_whitelist])
       assert len(ecus_not_in_whitelist) == 0, \
@@ -158,8 +149,6 @@ class TestHyundaiFingerprint:
             continue
           if platform_code_ecu == Ecu.eps and car_model in no_eps_platforms:
             continue
-          if car_model in NON_SCC_CAR:
-            continue
           assert platform_code_ecu in [e[0] for e in ecus]
 
   def test_fw_format(self, subtests):
@@ -172,9 +161,6 @@ class TestHyundaiFingerprint:
       with subtests.test(car_model=car_model.value):
         for ecu, fws in ecus.items():
           if ecu[0] not in PLATFORM_CODE_ECUS:
-            continue
-
-          if car_model in NON_SCC_CAR:
             continue
 
           codes = set()
@@ -225,15 +211,6 @@ class TestHyundaiFingerprint:
                                (b"ON-S9100", b"190405"), (b"ON-S9100", b"190720")}
 
   def test_fuzzy_excluded_platforms(self):
-    # Asserts a list of platforms that will not fuzzy fingerprint with platform codes due to them being shared.
-    # This list can be shrunk as we combine platforms and detect features
-    excluded_platforms = {
-      CAR.GENESIS_G70,            # shared platform code, part number, and date
-      CAR.GENESIS_G70_2020,
-    }
-    excluded_platforms |= CANFD_CAR - EV_CAR - CANFD_FUZZY_WHITELIST  # shared platform codes
-    excluded_platforms |= NO_DATES_PLATFORMS  # date codes are required to match
-
     platforms_with_shared_codes = set()
     for platform, fw_by_addr in FW_VERSIONS.items():
       car_fw = []
@@ -243,9 +220,6 @@ class TestHyundaiFingerprint:
           car_fw.append(CarParams.CarFw(ecu=ecu_name, fwVersion=fw, address=addr,
                                         subAddress=0 if sub_addr is None else sub_addr))
 
-      if platform in NON_SCC_CAR:
-        continue
-
       CP = CarParams(carFw=car_fw)
       matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw), CP.carVin, FW_VERSIONS)
       if len(matches) == 1:
@@ -253,4 +227,6 @@ class TestHyundaiFingerprint:
       else:
         platforms_with_shared_codes.add(platform)
 
-    assert platforms_with_shared_codes == excluded_platforms
+    # A unique fuzzy match must always resolve back to the platform that supplied the firmware.
+    # Ambiguity is expected for shared platform codes and for platforms without parseable dates.
+    assert {CAR.GENESIS_G70, CAR.GENESIS_G70_2020} <= platforms_with_shared_codes

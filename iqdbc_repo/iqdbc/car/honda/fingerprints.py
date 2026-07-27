@@ -2,8 +2,8 @@
 from iqdbc.car.structs import CarParams
 from iqdbc.car.honda.values import CAR
 
-from iqdbc.iqpilot.car.fingerprints_ext import merge_fw_versions
-from iqdbc.iqpilot.car.honda.fingerprints_ext import FW_VERSIONS_EXT
+from iqdbc.lvbs.car.iq_fingerprints import extend_fw_versions
+from iqdbc.lvbs.car.honda.iq_fingerprints import FW_VERSIONS_EXT
 
 Ecu = CarParams.Ecu
 
@@ -1098,4 +1098,4 @@ FW_VERSIONS = {
   },
 }
 
-FW_VERSIONS = merge_fw_versions(FW_VERSIONS, FW_VERSIONS_EXT)
+FW_VERSIONS = extend_fw_versions(FW_VERSIONS, FW_VERSIONS_EXT)

@@ -204,6 +204,7 @@ def hw_state_thread(end_event, hw_queue):
   modem_configured = False
   modem_missing_count = 0
   modem_restart_count = 0
+  sim_detection_recovered = False
 
   while not end_event.is_set():
     # these are expensive calls. update every 10s
@@ -253,6 +254,10 @@ def hw_state_thread(end_event, hw_queue):
           cloudlog.warning("configuring modem")
           HARDWARE.configure_modem()
           modem_configured = True
+
+        if modem_configured and not sim_detection_recovered and HARDWARE.recover_sim_detection():
+          cloudlog.event("sim missing with hot-swap detect armed, rebooting modem with detect disabled", error=True)
+          sim_detection_recovered = True
 
         prev_hw_state = hw_state
       except Exception:
@@ -462,7 +467,7 @@ def hardware_thread(end_event, hw_queue) -> None:
     startup_conditions["device_booted"] = startup_conditions.get("device_booted", False) or HARDWARE.booted()
 
     # user-forced status (Always Offroad can be temporarily overridden)
-    offroad_mode = params.get_bool("OffroadMode")
+    offroad_mode = params.get_bool("IQAlwaysOffroad")
     force_onroad_until = params.get("ForceOnroadUntil", return_default=True)
     now = int(time.time())
     force_onroad_active = offroad_mode and force_onroad_until > now
@@ -549,15 +554,17 @@ def hardware_thread(end_event, hw_queue) -> None:
     som_power_draw = HARDWARE.get_som_power_draw()
     msg.deviceState.somPowerDrawW = som_power_draw
 
-    # FastSleep deep standby: shed heavy processes at low battery instead of shutting down,
-    # recover on ignition or once the alternator is charging
+    # FastSleep deep standby: shed heavy processes once parked with the screen idled off
+    # (or at low battery) instead of shutting down, recover on ignition or once the
+    # alternator is charging
     fast_sleep = params.get_bool("FastSleep")
     if fast_sleep and not tesla_no_sleep:
       if low_power:
         if onroad_conditions["ignition"] or power_monitor.car_voltage_mV >= (VBATT_LOW_POWER_EXIT * 1e3):
           low_power = False
       else:
-        low_power = power_monitor.should_enter_low_power(onroad_conditions["ignition"], in_car, off_ts)
+        screen_off = msg.deviceState.screenBrightnessPercent < 1e-3
+        low_power = power_monitor.should_enter_low_power(onroad_conditions["ignition"], in_car, off_ts, screen_off)
     else:
       low_power = False
 

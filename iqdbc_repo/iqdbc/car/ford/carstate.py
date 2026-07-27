@@ -5,17 +5,14 @@ from iqdbc.car.ford.fordcan import CanBus
 from iqdbc.car.ford.values import DBC, CarControllerParams, FordFlags
 from iqdbc.car.interfaces import CarStateBase
 
-from iqdbc.iqpilot.car.ford.aol import AolCarState
-
 ButtonType = structs.CarState.ButtonEvent.Type
 GearShifter = structs.CarState.GearShifter
 TransmissionType = structs.CarParams.TransmissionType
 
 
-class CarState(CarStateBase, AolCarState):
+class CarState(CarStateBase):
   def __init__(self, CP, CP_IQ):
     CarStateBase.__init__(self, CP, CP_IQ)
-    AolCarState.__init__(self, CP, CP_IQ)
     can_define = CANDefine(DBC[CP.carFingerprint][Bus.pt])
     if CP.transmissionType == TransmissionType.automatic:
       self.shifter_values = can_define.dv["PowertrainData_10"]["TrnRng_D_Rq"]
@@ -111,8 +108,6 @@ class CarState(CarStateBase, AolCarState):
     # Stock values from IPMA so that we can retain some stock functionality
     self.acc_tja_status_stock_values = cp_cam.vl["ACCDATA_3"]
     self.lkas_status_stock_values = cp_cam.vl["IPMA_Data"]
-
-    AolCarState.update_aol(self, ret, can_parsers)
 
     ret.buttonEvents = [
       *create_button_events(self.distance_button, prev_distance_button, {1: ButtonType.gapAdjustCruise}),

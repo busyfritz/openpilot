@@ -141,8 +141,8 @@ def _patch_mock_state():
   mp.put("AolMainCruiseAllowed",      True)
   mp.put("AolUnifiedEngagementMode",  False)
   mp.put("NeuralNetworkFeedForward",  False)
-  mp.put("AutoLaneChangeTimer",       0)      # nudge
-  mp.put("AutoLaneChangeBsmDelay",    False)
+  mp.put("IQLaneChangeTimer",       0)      # nudge
+  mp.put("IQLaneChangeBsmDelay",    False)
 
   # ── Visuals (correct param keys matching visuals.py) ─────────────────────
   mp.put("BlindSpot",             True)
@@ -165,7 +165,7 @@ def _patch_mock_state():
   mp.put("Version",         "IQ.Pilot 0.9.5-mici")
 
   # ── Models ────────────────────────────────────────────────────────────────
-  mp.put("LagdToggle",      False)
+  mp.put("IQLiveSteerDelay",      False)
   mp.put("IQLaneTurnDesire",  False)
   mp.put("IQLaneTurnValue",   "19.0")
 

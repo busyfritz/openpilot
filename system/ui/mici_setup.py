@@ -50,6 +50,8 @@ INSTALLER_URL_PATH = "/tmp/installer_url"
 # "<user>/<branch>" maps to a GitHub fork. IQ.OS uses the DRM "magic" compositor, not Wayland,
 # so comma's downloaded installers (installer.comma.ai) crash on launch; clone the fork directly.
 GITHUB_FORK_URL = "https://github.com/{user}/openpilot.git"
+# IQ.Pilot lives on the IQ Lvbs git server; github.com/IQLvbs is DMCA'd and dead.
+GIT_URL_OVERRIDES = {"IQLvbs": "https://git.konn3kt.com/IQ.Lvbs/IQ.Pilot.git"}
 
 CONTINUE = """#!/usr/bin/env bash
 
@@ -756,7 +758,7 @@ class Setup(Widget):
       pass
 
   def _fork_install_thread(self, user: str, branch: str):
-    git_url = GITHUB_FORK_URL.format(user=user)
+    git_url = GIT_URL_OVERRIDES.get(user) or GITHUB_FORK_URL.format(user=user)
     label = f"{user}/{branch}"
     try:
       subprocess.run(["rm", "-rf", TMP_INSTALL_PATH], check=False)
@@ -774,7 +776,8 @@ class Setup(Widget):
       subprocess.run(["git", "-C", TMP_INSTALL_PATH, "submodule", "update", "--init"], check=False)
 
       run_cmd(["rm", "-f", VALID_CACHE_PATH])
-      run_cmd(["rm", "-rf", INSTALL_PATH])
+      # sudo: a prior *run* install can leave root-owned .pyc here that a comma-user rm can't delete.
+      run_cmd(["sudo", "rm", "-rf", INSTALL_PATH])
       run_cmd(["mv", TMP_INSTALL_PATH, INSTALL_PATH])
 
       self._ble_progress("installing", 90)
@@ -882,6 +885,11 @@ class Setup(Widget):
       # AGNOS might try to execute the installer before this process exits.
       # Therefore, important to close the fd before renaming the installer.
       os.close(fd)
+      # comma's ELF installer does `rm -rf /data/openpilot` as the comma user and asserts it
+      # succeeds; a prior *run* install leaves root-owned __pycache__ .pyc it can't delete, so it
+      # aborts before continue.sh and bounces back to setup. Clear the old tree first (sudo) so the
+      # installer's rm succeeds.
+      subprocess.run(["sudo", "rm", "-rf", INSTALL_PATH], check=False)
       os.rename(tmpfile, INSTALLER_DESTINATION_PATH)
 
       with open(INSTALLER_URL_PATH, "w") as f:

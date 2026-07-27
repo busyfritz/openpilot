@@ -8,8 +8,8 @@ from iqdbc.car.honda.values import CAR, CruiseButtons, HONDA_BOSCH, HONDA_BOSCH_
                                      HONDA_BOSCH_TJA_CONTROL, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams
 from iqdbc.car.interfaces import CarControllerBase
 
-from iqdbc.iqpilot.car.honda.aol import AolCarController
-from iqdbc.iqpilot.car.honda.gas_interceptor import GasInterceptorCarController
+from iqdbc.lvbs.car.honda.aol import AolCarController
+from iqdbc.lvbs.car.honda.gas_interceptor import GasInterceptorCarController
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 LongCtrlState = structs.CarControl.Actuators.LongControlState

@@ -7,7 +7,8 @@ from iqdbc.safety.tests.libsafety import libsafety_py
 import iqdbc.safety.tests.common as common
 from iqdbc.safety.tests.common import CANPackerSafety
 
-from iqdbc.iqpilot.car.gm.values_ext import GMSafetyFlagsIQ
+# GM_PARAM_IQ_NON_ACC in safety/modes/gm.h (IQ safety framework flag)
+GM_PARAM_IQ_NON_ACC = 1
 
 
 class Buttons:
@@ -236,7 +237,7 @@ class TestGmCameraNonACCSafety(TestGmCameraSafety):
     self.packer = CANPackerSafety("gm_global_a_powertrain_generated")
     self.packer_chassis = CANPackerSafety("gm_global_a_chassis")
     self.safety = libsafety_py.libsafety
-    self.safety.set_current_safety_param_iq(GMSafetyFlagsIQ.NON_ACC)
+    self.safety.set_current_safety_param_iq(GM_PARAM_IQ_NON_ACC)
     self.safety.set_safety_hooks(CarParams.SafetyModel.gm, GMSafetyFlags.HW_CAM | self.EXTRA_SAFETY_PARAM)
     self.safety.init_tests()
 

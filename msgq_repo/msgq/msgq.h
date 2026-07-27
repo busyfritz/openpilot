@@ -41,6 +41,7 @@ struct msgq_queue_t {
   int reader_id;
   uint64_t read_uid_local;
   uint64_t write_uid_local;
+  int64_t last_reap_us;
 
   bool read_conflate;
   std::string endpoint;

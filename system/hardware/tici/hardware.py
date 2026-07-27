@@ -69,6 +69,9 @@ NetworkStrength = log.DeviceState.NetworkStrength
 MM_MODEM_ACCESS_TECHNOLOGY_UMTS = 1 << 5
 MM_MODEM_ACCESS_TECHNOLOGY_LTE = 1 << 14
 
+# MMModemStateFailedReason
+MM_MODEM_STATE_FAILED_REASON_SIM_MISSING = 2
+
 
 def affine_irq(val, action):
   irqs = get_irqs_for_action(action)
@@ -604,6 +607,32 @@ class Tici(HardwareBase):
         # needs to be root
         os.system(f"sudo cp {tf.name} {dest}")
       os.system(f"sudo nmcli con load {dest}")
+
+  def recover_sim_detection(self) -> bool:
+    # A worn SIM-tray presence switch can read "removed" while the SIM pads still make
+    # contact; with hot-swap detect armed (AT+QSIMDET=1) the modem never powers the SIM
+    # and lands in failed/sim-missing. Disabling detect and rebooting the modem makes it
+    # probe the SIM electrically. Safe to retry on failure: firing disarms the QSIMDET
+    # gate, so a genuinely SIM-less device gets at most one extra modem reboot per boot.
+    if self.get_device_type() not in ("tici", "tizi"):
+      return False
+
+    try:
+      modem = self.get_modem()
+      state = modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+      if state != MM_MODEM_STATE.FAILED:
+        return False
+      reason = modem.Get(MM_MODEM, 'StateFailedReason', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+      if reason != MM_MODEM_STATE_FAILED_REASON_SIM_MISSING:
+        return False
+      detect = str(modem.Command('AT+QSIMDET?', math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)).strip()
+      if not detect.startswith('+QSIMDET: 1'):
+        return False
+      modem.Command('AT+QSIMDET=0,0', math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
+      modem.Command('AT+CFUN=1,1', math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
+      return True
+    except Exception:
+      return False
 
   def reboot_modem(self):
     modem = None

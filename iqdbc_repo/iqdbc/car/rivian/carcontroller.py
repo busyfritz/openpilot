@@ -6,7 +6,7 @@ from iqdbc.car.interfaces import CarControllerBase
 from iqdbc.car.rivian.riviancan import create_lka_steering, create_longitudinal, create_wheel_touch, create_adas_status
 from iqdbc.car.rivian.values import CarControllerParams
 
-from iqdbc.iqpilot.car.rivian.aol import AolCarController
+from iqdbc.lvbs.car.rivian.aol import AolCarController
 
 
 class CarController(CarControllerBase, AolCarController):
