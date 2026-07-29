@@ -1,8 +1,8 @@
 """
 Copyright © IQ.Lvbs, apart of Project Teal Lvbs, All Rights Reserved, licensed under https://konn3kt.com/tos/
 """
-from opendbc.car import DT_CTRL
-from opendbc.car.common.conversions import Conversions as CV
+from iqdbc.car import DT_CTRL
+from iqdbc.car.common.conversions import Conversions as CV
 
 def create_hca_steering_control(packer, bus, apply_torque, HCA_Status):
   values = {
