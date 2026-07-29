@@ -194,7 +194,7 @@ CHEVRON_INFO_DESCRIPTION = {
 
 # param key -> (title fn, description fn)
 _HUD_TOGGLES = {
-  "BlindSpot": (
+  "IQBlindSpotAlerts": (
     lambda: tr("Blind Spot Alerts"),
     lambda: tr("Flashes a side warning whenever the car reports something sitting in your blind spot (BSM-equipped cars only)."),
   ),
@@ -202,20 +202,20 @@ _HUD_TOGGLES = {
     lambda: tr("Expanded Status Bar"),
     lambda: tr("Bring back the classic UI's wide offroad status strip: temperature, vehicle, and Konn3kt state at a glance."),
   ),
-  "TorqueBar": (
+  "IQSteerEffortArc": (
     lambda: tr("Steering Effort Arc"),
     lambda: tr("Trace an arc over the road view showing how much steering IQ.Pilot is applying while lateral control runs."),
   ),
-  "RoadNameToggle": (
+  "IQRoadNameOverlay": (
     lambda: tr("Road Name Overlay"),
     lambda: tr("Show the current road's name over the driving view."
                "<br>Requires offline map data for your region to be installed."),
   ),
-  "ShowTurnSignals": (
+  "IQBlinkerIndicators": (
     lambda: tr("Blinker Indicators"),
     lambda: tr("Mirror the car's blinkers as arrows on the driving screen."),
   ),
-  "RocketFuel": (
+  "IQAccelMeter": (
     lambda: tr("Acceleration Meter"),
     lambda: tr("Draw a bar along the left edge tracking measured acceleration and braking — what the car is actually "
                "doing right now, not the planner's request."),
@@ -243,7 +243,7 @@ class VisualsLayout(Widget):
       title=lambda: tr("Lead Vehicle Readouts"),
       description="",
       buttons=[lambda: tr("Off"), lambda: tr("Distance"), lambda: tr("Speed"), lambda: tr("Time"), lambda: tr("All")],
-      param="ChevronInfo",
+      param="IQLeadReadouts",
       inline=False,
     )
     self._dev_ui_info = toggle_item(
@@ -270,12 +270,12 @@ class VisualsLayout(Widget):
   def _sync_chevron_row(self):
     if ui_state.has_longitudinal_control:
       self._chevron_info.set_description(tr(CHEVRON_INFO_DESCRIPTION["enabled"]))
-      self._chevron_info.action_item.set_selected_button(ui_state.params.get("ChevronInfo", return_default=True))
+      self._chevron_info.action_item.set_selected_button(ui_state.params.get("IQLeadReadouts", return_default=True))
       self._chevron_info.action_item.set_enabled(True)
     else:
       self._chevron_info.set_description(tr(CHEVRON_INFO_DESCRIPTION["disabled"]))
       self._chevron_info.action_item.set_enabled(False)
-      ui_state.params.put("ChevronInfo", 0)
+      ui_state.params.put("IQLeadReadouts", 0)
 
   def _update_state(self):
     super()._update_state()
@@ -1388,7 +1388,7 @@ class IQDeviceLayout(DeviceLayout):
     DeviceLayout._initialize_items(self)
 
     # Using dual button with no right button for better alignment
-    self._always_offroad_btn = self._left_button(lambda: tr("Force Offroad Mode"), self._handle_always_offroad)
+    self._always_offroad_btn = self._left_button(lambda: tr("Keep Device Offroad"), self._handle_always_offroad)
     self._force_onroad_btn = self._left_button(lambda: tr("Force On-Road (10 min)"), self._handle_force_onroad)
 
     self._max_time_offroad = option_item(
@@ -1592,7 +1592,7 @@ class IQDeviceLayout(DeviceLayout):
     force_onroad_active = force_onroad_until > now
 
     # Text & Color
-    offroad_mode_btn_text = tr("Exit Offroad Mode") if always_offroad else tr("Force Offroad Mode")
+    offroad_mode_btn_text = tr("Exit Offroad Mode") if always_offroad else tr("Keep Device Offroad")
     offroad_mode_btn_style = ButtonStyle.PRIMARY if always_offroad else ButtonStyle.DANGER
     self._always_offroad_btn.action_item.left_button.set_text(offroad_mode_btn_text)
     self._always_offroad_btn.action_item.left_button.set_button_style(offroad_mode_btn_style)
@@ -1957,12 +1957,12 @@ class ModelsLayout(Widget):
     return folders_list
 
   def _handle_current_model_clicked(self):
-    favs = ui_state.params.get("ModelManager_Favs")
+    favs = ui_state.params.get("IQModelFavorites")
     favorites = set(favs.split(';')) if favs else set()
     folders_list = self._get_folders(favorites)
 
     active_ref = self.model_manager.activeBundle.ref if self._has_active_bundle_param() and self.model_manager.activeBundle else "Default"
-    self.model_dialog = PickerDialog(tr("Choose a Model"), folders_list, active_ref, "ModelManager_Favs",
+    self.model_dialog = PickerDialog(tr("Choose a Model"), folders_list, active_ref, "IQModelFavorites",
                                          get_folders_fn=self._get_folders, on_exit=self._on_model_selected)
     gui_app.set_modal_overlay(self.model_dialog, callback=self._on_model_selected)
 
@@ -2191,8 +2191,8 @@ class HyundaiSettings(BrandPanel):
     self.longitudinal_tuning_item = multiple_button_item(
       tr("Longitudinal Tune Profile"), "",
       [tr("Off"), tr("Dynamic"), tr("Predictive")],
-      button_width=300, param="HyundaiLongitudinalTuning", inline=False,
-      callback=lambda index: ui_state.params.put("HyundaiLongitudinalTuning", index))
+      button_width=300, param="IQHyundaiLongTune", inline=False,
+      callback=lambda index: ui_state.params.put("IQHyundaiLongTune", index))
     self.items = [self.longitudinal_tuning_item]
 
   def _alpha_long_supported(self) -> bool:
@@ -2204,7 +2204,7 @@ class HyundaiSettings(BrandPanel):
 
   def update_settings(self):
     self.alpha_long_available = self._alpha_long_supported()
-    selected = int(ui_state.params.get("HyundaiLongitudinalTuning") or "0")
+    selected = int(ui_state.params.get("IQHyundaiLongTune") or "0")
 
     if not ui_state.is_offroad():
       desc, usable = tr("Unavailable while the car is onroad."), False
@@ -2231,11 +2231,11 @@ class SubaruSettings(BrandPanel):
   def __init__(self):
     super().__init__()
     self._supported = False
-    self.stop_and_go_toggle = toggle_item(tr("Creep from Standstill (Beta)"), "", param="SubaruStopAndGo",
+    self.stop_and_go_toggle = toggle_item(tr("Creep from Standstill (Beta)"), "", param="IQSubaruCreepAssist",
                                           callback=lambda _: self.update_settings())
     self.stop_and_go_manual_parking_brake_toggle = toggle_item(
       tr("Creep from Standstill — Manual Handbrake (Beta)"), "",
-      param="SubaruStopAndGoManualParkingBrake", callback=lambda _: self.update_settings())
+      param="IQSubaruCreepAssistManualBrake", callback=lambda _: self.update_settings())
     self.items = [self.stop_and_go_toggle, self.stop_and_go_manual_parking_brake_toggle]
 
   def _platform_flags(self) -> int:
@@ -2286,8 +2286,8 @@ def _speed_text(kmh: int) -> str:
 class TeslaSettings(BrandPanel):
   def __init__(self):
     super().__init__()
-    self.coop_steering_toggle = toggle_item(tr("VTB (Virtual Torque Blending)"), "", param="TeslaCoopSteering")
-    self.items = [self.coop_steering_toggle]
+    self.torque_blend_toggle = toggle_item(tr("VTB (Virtual Torque Blending)"), "", param="IQTeslaTorqueBlend")
+    self.items = [self.torque_blend_toggle]
 
   def update_settings(self):
     caution = tr("Warning: steering may oscillate in turns below {}; turn this off if you feel it.").format(
@@ -2300,8 +2300,8 @@ class TeslaSettings(BrandPanel):
       blocker = tr("Flip on Always Offroad from the Device panel, or power the car down, to change this.")
       body = f"<b>{blocker}</b><br><br>{body}"
 
-    self.coop_steering_toggle.set_description(body)
-    self.coop_steering_toggle.action_item.set_enabled(ui_state.is_offroad())
+    self.torque_blend_toggle.set_description(body)
+    self.torque_blend_toggle.action_item.set_enabled(ui_state.is_offroad())
 
 
 # ===== vehicle_brands_toyota =====
@@ -2312,7 +2312,7 @@ class ToyotaSettings(BrandPanel):
     self.enforce_stock_longitudinal = toggle_item(
       lambda: tr("Keep Factory Gas and Brake"),
       description=lambda: tr("Keeps gas and brakes with the factory Toyota system; IQ.Pilot steers only."),
-      initial_state=ui_state.params.get_bool("ToyotaEnforceStockLongitudinal"),
+      initial_state=ui_state.params.get_bool("IQToyotaFactoryLong"),
       callback=self._on_toggled,
       enabled=lambda: not ui_state.engaged,
     )
@@ -2320,7 +2320,7 @@ class ToyotaSettings(BrandPanel):
 
   @staticmethod
   def _apply(enabled: bool):
-    ui_state.params.put_bool("ToyotaEnforceStockLongitudinal", enabled)
+    ui_state.params.put_bool("IQToyotaFactoryLong", enabled)
     if enabled and ui_state.params.get_bool("AlphaLongitudinalEnabled"):
       ui_state.params.put_bool("AlphaLongitudinalEnabled", False)
     ui_state.params.put_bool("OnroadCycleRequested", True)

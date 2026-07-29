@@ -11,7 +11,7 @@ from openpilot.selfdrive.ui.mici.layouts.settings.cruise import CruiseLayoutMici
 from openpilot.selfdrive.ui.mici.layouts.settings.visuals import VisualsLayoutMici
 from openpilot.selfdrive.ui.mici.layouts.settings.models import ModelsLayoutMici
 from openpilot.selfdrive.ui.mici.layouts.settings.display import DisplayLayoutMici
-from openpilot.selfdrive.ui.mici.layouts.settings.trips import TripsLayoutMici
+from openpilot.selfdrive.ui.mici.layouts.settings.drive_history import TripsLayoutMici
 from openpilot.selfdrive.ui.mici.layouts.settings.vehicle import VehicleLayoutMici
 from openpilot.selfdrive.ui.mici.layouts.settings.dashcam import DashcamLayoutMici
 from openpilot.selfdrive.ui.mici.layouts.settings.network.network_layout import NetworkLayoutMici

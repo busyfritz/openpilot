@@ -200,7 +200,7 @@ class TrainingGuideDMTutorial(Widget):
       looking_center = False
 
     # stay at 100% once reached
-    if (dm_state.visionPolicyState.faceDetected and looking_center) or self._progress.x > 0.99:
+    if (dm_state.faceDetected and looking_center) or self._progress.x > 0.99:
       slow = self._progress.x < 0.25
       duration = self.PROGRESS_DURATION * 2 if slow else self.PROGRESS_DURATION
       self._progress.x += 1.0 / (duration * gui_app.target_fps)

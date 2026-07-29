@@ -54,10 +54,10 @@ EventName = log.OnroadEvent.EventName
 ButtonType = car.CarState.ButtonEvent.Type
 SafetyModel = car.CarParams.SafetyModel
 TurnDirection = custom.IQTurnSignalDirection
-AlertLevel = log.DriverMonitoringState.AlertLevel
-MonitoringPolicy = log.DriverMonitoringState.MonitoringPolicy
 
 IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
+
+NON_BLOCKING_PROCESSES = {'mapd', 'iqmapd', 'navd', 'navrenderd'}
 
 
 def _cleanup_startup_params(CP: car.CarParams, params: Params) -> None:
@@ -129,6 +129,7 @@ class SelfdriveD(GapButtonActions):
     self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
     self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
     self.nav_exit_lane_change = self._read_nav_exit_lane_change()
+    self.model_download_pending = self.params.get("ModelManager_DownloadIndex") is not None
 
     car_recognized = self.CP.brand != 'mock'
 
@@ -149,7 +150,6 @@ class SelfdriveD(GapButtonActions):
     self.events_prev = []
     self.logged_comm_issue = None
     self.not_running_prev = None
-    self.dm_lockout_set = False
     self.experimental_mode = False
     self.personality = get_sanitize_int_param(
       "LongitudinalPersonality",
@@ -161,10 +161,10 @@ class SelfdriveD(GapButtonActions):
     self.state_machine = StateMachine()
     self.rk = Ratekeeper(100, print_delay_threshold=None)
 
-    self.ignored_processes = set()
+    self.ignored_processes = set(NON_BLOCKING_PROCESSES)
     nvme_expected = os.path.exists('/dev/nvme0n1') or (not os.path.isfile("/persist/comma/living-in-the-moment"))
     if HARDWARE.get_device_type() == 'tici' and nvme_expected:
-      self.ignored_processes = {'loggerd', }
+      self.ignored_processes.add('loggerd')
 
     # Determine startup event
     is_remote = build_metadata.openpilot.comma_remote or build_metadata.openpilot.iqpilot_remote
@@ -186,6 +186,7 @@ class SelfdriveD(GapButtonActions):
 
     self.events_iq = IQEvents()
     self.events_iq_prev = []
+    self._cached_dm_event_names: tuple[int, ...] = ()
     self._cached_plan_event_names: tuple[int, ...] = ()
     self._cached_model_event_names: tuple[int, ...] = ()
     self._cached_nav_event_names: tuple[int, ...] = ()
@@ -206,6 +207,10 @@ class SelfdriveD(GapButtonActions):
   def _refresh_cached_plan_events(self) -> None:
     if self.sm.updated['iqPlan']:
       self._cached_plan_event_names = tuple(event.name.raw for event in self._get_longitudinal_plan_ext().events)
+
+  def _refresh_cached_dm_events(self) -> None:
+    if self.sm.updated['driverMonitoringState']:
+      self._cached_dm_event_names = tuple(event.name.raw for event in self.sm['driverMonitoringState'].events)
 
   def _refresh_cached_model_events(self) -> None:
     if not self.sm.updated['iqDriveModelData']:
@@ -295,24 +300,8 @@ class SelfdriveD(GapButtonActions):
       self.events.add(EventName.resumeBlocked)
 
     if not self.CP.notCar:
-      if self.sm['driverMonitoringState'].lockout and not self.dm_lockout_set:
-        self.params.put_bool("DriverTooDistracted", True)
-        self.dm_lockout_set = True
-      elif not self.sm['driverMonitoringState'].lockout and self.dm_lockout_set:
-        self.params.remove("DriverTooDistracted")
-        self.dm_lockout_set = False
-
-      if self.sm['driverMonitoringState'].lockout or self.sm['driverMonitoringState'].alwaysOnLockout:
-        self.events.add(EventName.tooDistracted)
-
-      vision_dm = self.sm['driverMonitoringState'].activePolicy == MonitoringPolicy.vision
-      if self.sm['driverMonitoringState'].alertLevel == AlertLevel.one:
-        self.events.add(EventName.driverDistracted1 if vision_dm else EventName.driverUnresponsive1)
-      elif self.sm['driverMonitoringState'].alertLevel == AlertLevel.two:
-        self.events.add(EventName.driverDistracted2 if vision_dm else EventName.driverUnresponsive2)
-      elif self.sm['driverMonitoringState'].alertLevel == AlertLevel.three:
-        self.events.add(EventName.driverDistracted3 if vision_dm else EventName.driverUnresponsive3)
-
+      self._refresh_cached_dm_events()
+      self._add_event_names(self._cached_dm_event_names)
       self._refresh_cached_plan_events()
       self._add_iq_event_names(self._cached_plan_event_names)
 
@@ -443,6 +432,8 @@ class SelfdriveD(GapButtonActions):
       self.not_running_prev = not_running
     if self.sm.recv_frame['managerState'] and (not_running - self.ignored_processes):
       self.events.add(EventName.processNotRunning)
+      if 'iqmodeld' in not_running and self.model_download_pending:
+        self.events_iq.add(custom.IQOnroadEvent.EventName.modelUpdating)
     else:
       if not SIMULATION and not self.rk.lagging:
         if not self.sm.all_alive(self.camera_packets):
@@ -754,8 +745,18 @@ class SelfdriveD(GapButtonActions):
       self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
       self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
       self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
-      self.personality = self.params.get("LongitudinalPersonality", return_default=True)
+      # Params can be changed while selfdrived is running. Keep the live value in
+      # the same valid enum range enforced during startup; otherwise a stale value
+      # (for example 3) makes the alert callback lookup raise KeyError and kills
+      # selfdrived.
+      self.personality = get_sanitize_int_param(
+        "LongitudinalPersonality",
+        min(log.LongitudinalPersonality.schema.enumerants.values()),
+        max(log.LongitudinalPersonality.schema.enumerants.values()),
+        self.params,
+      )
       self.nav_exit_lane_change = self._read_nav_exit_lane_change()
+      self.model_download_pending = self.params.get("ModelManager_DownloadIndex") is not None
 
       self.aol.read_params()
       time.sleep(0.1)

@@ -15,7 +15,7 @@ from iqdbc.lvbs.car.tesla.values import TeslaFlagsIQ
 
 DT_LAT_CTRL = DT_CTRL * CarControllerParams.STEER_STEP
 
-class CoopSteeringCarControllerParams(CarControllerParams):
+class TorqueBlendParams(CarControllerParams):
   ANGLE_LIMITS = replace(CarControllerParams.ANGLE_LIMITS, MAX_ANGLE_RATE=5)
 
 STEERING_DEG_PHASE_LEAD_COEFF = 8.0
@@ -28,7 +28,7 @@ STEER_OVERRIDE_LAT_ACCEL_GAIN_LIMIT = 10 # deg/Nm stability and smoothness for a
 
 # angle ramping
 STEER_OVERRIDE_MAX_LAT_JERK = 2.0 # m/s^3 - determines angle ramping rate - speed dependent
-STEER_OVERRIDE_MAX_LAT_JERK_CENTERING = CoopSteeringCarControllerParams.ANGLE_LIMITS.MAX_LATERAL_JERK # m/s^3 -  for low speed angle ramp down
+STEER_OVERRIDE_MAX_LAT_JERK_CENTERING = TorqueBlendParams.ANGLE_LIMITS.MAX_LATERAL_JERK # m/s^3 -  for low speed angle ramp down
 # stability and smoothness for angle ramp control - at very low speeds this takes precedence over jerk settings
 STEER_OVERRIDE_LAT_JERK_GAIN_LIMIT = 100 # deg/s/Nm - should be less than CarControllerParams.ANGLE_LIMITS.MAX_ANGLE_RATE / DT_CTRL / STEER_OVERRIDE_TORQUE_RANGE
 STEER_OVERRIDE_TORQUE_RANGE = STEER_OVERRIDE_MAX_TORQUE - STEER_OVERRIDE_MIN_TORQUE
@@ -42,7 +42,7 @@ STEER_DESIRED_LIMITER_OVERRIDE_ACTIVE_COUNTER = 0.7 # second
 STEER_RESUME_RATE_LIMIT_RAMP_RATE = 500 # deg/s^2 - controls rate of rise of angle rate limit, not angle directly
 
 
-CoopSteeringDataIQ = namedtuple("CoopSteeringDataIQ",
+TorqueBlendDataIQ = namedtuple("TorqueBlendDataIQ",
                                 ["steeringAngleDeg", "lat_active", "control_type"])
 
 def get_steer_from_lat_accel(lat_accel, v_ego: float, VM: VehicleModel):
@@ -84,7 +84,7 @@ def calc_override_angle_delta_limited(torque: float, vEgo: float, VM: VehicleMod
   """
 
   # prevents windup in carcontroller rate limiter
-  lat_jerk = min(lat_jerk, CoopSteeringCarControllerParams.ANGLE_LIMITS.MAX_LATERAL_JERK)
+  lat_jerk = min(lat_jerk, TorqueBlendParams.ANGLE_LIMITS.MAX_LATERAL_JERK)
 
   # lateral accel is linear in respect to angle so it's fine to interpolate it with torque
   torque_to_angle = get_steer_from_lat_accel(lat_jerk, vEgo, VM) / STEER_OVERRIDE_TORQUE_RANGE
@@ -93,7 +93,7 @@ def calc_override_angle_delta_limited(torque: float, vEgo: float, VM: VehicleMod
   override_angle_rate = torque * min(torque_to_angle, gain_limit)
 
   # prevent windup in angle rate limiter
-  return apply_bounds(override_angle_rate * DT_LAT_CTRL, CoopSteeringCarControllerParams.ANGLE_LIMITS.MAX_ANGLE_RATE)
+  return apply_bounds(override_angle_rate * DT_LAT_CTRL, TorqueBlendParams.ANGLE_LIMITS.MAX_ANGLE_RATE)
 
 
 class SteerRateLimiter:
@@ -160,10 +160,10 @@ class SteerAccelLimiter:
     return angle_out
 
 
-class CoopSteeringCarController:
+class TorqueBlendController:
   def __init__(self):
     self.coop_apply_angle_last = 0
-    self.coop_apply_angle_last_sat = 0
+    self.blend_apply_angle_last_sat = 0
     self.override_angle_accu = 0
     self.override_active_counter = 0  # Counter for how many cycles torque is below threshold
     self.resume_rate_limiter_delta = SteerRateLimiter()
@@ -201,7 +201,7 @@ class CoopSteeringCarController:
       return 0
 
     # unwind accumulator toward zero if the previous loop saturated (apply_steer_angle_limits_vm)
-    unwind = (self.coop_apply_angle_last - self.coop_apply_angle_last_sat) * unwind_weight
+    unwind = (self.coop_apply_angle_last - self.blend_apply_angle_last_sat) * unwind_weight
     if self.override_angle_accu * unwind > 0:
       unwind = apply_bounds(unwind, abs(self.override_angle_accu))
       self.override_angle_accu -= unwind
@@ -289,7 +289,7 @@ class CoopSteeringCarController:
     apply_angle_lim = self.resume_rate_limiter.update(apply_angle, angle_rate_delta_lim)
     return apply_angle_lim
 
-  def update(self, apply_angle, lat_active, CP_IQ: structs.IQCarParams, CS: structs.CarState, VM: VehicleModel) -> CoopSteeringDataIQ:
+  def update(self, apply_angle, lat_active, CP_IQ: structs.IQCarParams, CS: structs.CarState, VM: VehicleModel) -> TorqueBlendDataIQ:
     # estimate real steering angle by adding rate to the tesla filtered angle
     steeringAngleDegPhaseLead = CS.out.steeringAngleDeg + CS.out.steeringRateDeg / STEERING_DEG_PHASE_LEAD_COEFF
 
@@ -306,7 +306,7 @@ class CoopSteeringCarController:
 
     # final rate limit - matching panda safety
     self.coop_apply_angle_last = apply_angle
-    self.coop_apply_angle_last_sat = apply_steer_angle_limits_vm(apply_angle, self.coop_apply_angle_last_sat, CS.out.vEgoRaw,
-                                                    CS.out.steeringAngleDeg, lat_active, CoopSteeringCarControllerParams, VM)
+    self.blend_apply_angle_last_sat = apply_steer_angle_limits_vm(apply_angle, self.blend_apply_angle_last_sat, CS.out.vEgoRaw,
+                                                    CS.out.steeringAngleDeg, lat_active, TorqueBlendParams, VM)
 
-    return CoopSteeringDataIQ(self.coop_apply_angle_last_sat, lat_active, 1)  # 1 = angle control
+    return TorqueBlendDataIQ(self.blend_apply_angle_last_sat, lat_active, 1)  # 1 = angle control

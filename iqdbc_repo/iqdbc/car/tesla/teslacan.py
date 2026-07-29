@@ -10,7 +10,7 @@ class TeslaCAN:
     self.l_jerk = 0.0
 
   def create_steering_control(self, angle, enabled, control_type):
-    # control_type comes from coop_steering: ANGLE_CONTROL (1) normally, LANE_KEEP_ASSIST (2) when cooperative steering is enabled
+    # control_type comes from torque_blend: ANGLE_CONTROL (1) normally, LANE_KEEP_ASSIST (2) when cooperative steering is enabled
     control_type = control_type if enabled else 0
     if self.CP.flags & TeslaFlags.LEGACY_DAS_STEERING:
       control_type <<= 1  # legacy firmware uses a 2-bit field, one bit up from the 3-bit signal

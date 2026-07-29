@@ -6,7 +6,7 @@ from iqdbc.car.interfaces import CarControllerBase
 from iqdbc.car.subaru import subarucan
 from iqdbc.car.subaru.values import DBC, GLOBAL_ES_ADDR, CanBus, CarControllerParams, SubaruFlags
 
-from iqdbc.lvbs.car.subaru.stop_and_go import IQStopAndGoController
+from iqdbc.lvbs.car.subaru.creep_assist import IQStopAndGoController
 
 # FIXME: These limits aren't exact. The real limit is more than likely over a larger time period and
 # involves the total steering angle change rather than rate, but these limits work well for now
@@ -139,7 +139,7 @@ class CarController(CarControllerBase, IQStopAndGoController):
         if self.frame % 2 == 0:
           can_sends.append(subarucan.create_es_static_2(self.packer))
 
-    can_sends.extend(IQStopAndGoController.create_stop_and_go(self, self.packer, CC, CS, self.frame))
+    can_sends.extend(IQStopAndGoController.create_creep_assist(self, self.packer, CC, CS, self.frame))
 
     new_actuators = actuators.as_builder()
     new_actuators.torque = self.apply_torque_last / self.p.STEER_MAX

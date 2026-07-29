@@ -24,6 +24,14 @@ DESCRIPTIONS = {
     "Exposes a snapshot of recent dashcam clips and logs as a USB drive when connected to a computer. " +
     "IQ.Pilot keeps running while this is enabled."
   ),
+  'long_maneuver': tr_noop(
+    "Commands a scripted sequence of acceleration steps to measure longitudinal actuator response. " +
+    "Requires IQ.Pilot longitudinal control. Only use on a clear, closed road."
+  ),
+  'lat_maneuver': tr_noop(
+    "Commands a scripted sequence of lateral acceleration steps to measure steering actuator response. " +
+    "Only use on a straight, flat, clear road."
+  ),
 }
 
 
@@ -59,6 +67,20 @@ class DeveloperLayout(Widget):
     )
     self._ssh_keys = ssh_key_item(lambda: tr("SSH Keys"), description=lambda: tr(DESCRIPTIONS["ssh_key"]))
 
+    self._long_maneuver_toggle = toggle_item(
+      lambda: tr("Longitudinal Maneuver Mode"),
+      description=lambda: tr(DESCRIPTIONS["long_maneuver"]),
+      initial_state=self._params.get_bool("LongitudinalManeuverMode"),
+      callback=self._on_long_maneuver_mode,
+    )
+
+    self._lat_maneuver_toggle = toggle_item(
+      lambda: tr("Lateral Maneuver Mode"),
+      description=lambda: tr(DESCRIPTIONS["lat_maneuver"]),
+      initial_state=self._params.get_bool("LateralManeuverMode"),
+      callback=self._on_lat_maneuver_mode,
+    )
+
     self._on_enable_ui_debug(self._params.get_bool("ShowDebugInfo"))
 
     self._scroller = Scroller([
@@ -66,6 +88,8 @@ class DeveloperLayout(Widget):
       self._usb_storage_toggle,
       self._ssh_toggle,
       self._ssh_keys,
+      self._long_maneuver_toggle,
+      self._lat_maneuver_toggle,
     ], line_separator=True, spacing=0)
 
     # Toggles should be not available to change in onroad state
@@ -81,12 +105,24 @@ class DeveloperLayout(Widget):
   def _update_toggles(self):
     ui_state.update_params()
 
+    for item in (self._long_maneuver_toggle, self._lat_maneuver_toggle):
+      item.set_visible(not self._is_release)
+
+    if ui_state.CP is not None:
+      self._long_maneuver_toggle.action_item.set_enabled(ui_state.has_longitudinal_control and ui_state.is_offroad())
+      self._lat_maneuver_toggle.action_item.set_enabled(ui_state.is_offroad())
+    else:
+      self._long_maneuver_toggle.action_item.set_enabled(False)
+      self._lat_maneuver_toggle.action_item.set_enabled(False)
+
     # TODO: make a param control list item so we don't need to manage internal state as much here
     # refresh toggles from params to mirror external changes
     for key, item in (
       ("AdbEnabled", self._adb_toggle),
       ("UsbStorageEnabled", self._usb_storage_toggle),
       ("SshEnabled", self._ssh_toggle),
+      ("LongitudinalManeuverMode", self._long_maneuver_toggle),
+      ("LateralManeuverMode", self._lat_maneuver_toggle),
     ):
       item.action_item.set_state(self._params.get_bool(key))
 
@@ -108,7 +144,12 @@ class DeveloperLayout(Widget):
   def _on_long_maneuver_mode(self, state: bool):
     self._params.put_bool("LongitudinalManeuverMode", state)
     self._params.put_bool("JoystickDebugMode", False)
+    self._params.put_bool("LateralManeuverMode", False)
+    self._lat_maneuver_toggle.action_item.set_state(False)
 
   def _on_lat_maneuver_mode(self, state: bool):
     self._params.put_bool("LateralManeuverMode", state)
     self._params.put_bool("JoystickDebugMode", False)
+    self._params.put_bool("ExperimentalMode", False)
+    self._params.put_bool("LongitudinalManeuverMode", False)
+    self._long_maneuver_toggle.action_item.set_state(False)

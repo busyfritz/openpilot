@@ -47,6 +47,7 @@ class LongControl:
                              (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV),
                              rate=1 / DT_CTRL)
     self.last_output_accel = 0.0
+    self.stopping_decel_rate = CP_IQ.stoppingDecelRateOverride or 1.0
     self.smooth = SmoothStopController()
 
   def reset(self):
@@ -75,7 +76,7 @@ class LongControl:
       if output_accel > self.CP.stopAccel:
         output_accel = min(output_accel, 0.0)
         # TODO: can we just go straight to stopAccel?
-        output_accel -= 1.0 * DT_CTRL  # m/s^2/s while trying to stop
+        output_accel -= self.stopping_decel_rate * DT_CTRL  # m/s^2/s while trying to stop
       self.reset()
       self.smooth.reset()
 

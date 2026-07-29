@@ -145,12 +145,12 @@ def _patch_mock_state():
   mp.put("IQLaneChangeBsmDelay",    False)
 
   # ── Visuals (correct param keys matching visuals.py) ─────────────────────
-  mp.put("BlindSpot",             True)
-  mp.put("TorqueBar",             True)
-  mp.put("RoadNameToggle",        True)
-  mp.put("ShowTurnSignals",       True)
-  mp.put("RocketFuel",            False)
-  mp.put("ChevronInfo",           0)          # 0=off
+  mp.put("IQBlindSpotAlerts",             True)
+  mp.put("IQSteerEffortArc",             True)
+  mp.put("IQRoadNameOverlay",        True)
+  mp.put("IQBlinkerIndicators",       True)
+  mp.put("IQAccelMeter",            False)
+  mp.put("IQLeadReadouts",           0)          # 0=off
   mp.put("IQDevUIInfo",             0)          # 0=off
   mp.put("AlphaLongitudinalEnabled", False)   # real param; gates ChevronInfo
 

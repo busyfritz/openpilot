@@ -70,12 +70,12 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     longitudinalManeuver @30;
     steerTempUnavailableSilent @31;
     resumeRequired @32;
-    driverDistracted1 @33;
-    driverDistracted2 @34;
-    driverDistracted3 @35;
-    driverUnresponsive1 @36;
-    driverUnresponsive2 @37;
-    driverUnresponsive3 @38;
+    preDriverDistracted @33;
+    promptDriverDistracted @34;
+    driverDistracted @35;
+    preDriverUnresponsive @36;
+    promptDriverUnresponsive @37;
+    driverUnresponsive @38;
     belowSteerSpeed @39;
     lowBattery @40;
     accFaulted @41;
@@ -2183,7 +2183,6 @@ struct DriverStateV2 {
     rightBlinkProb @8 :Float32;
     sunglassesProb @9 :Float32;
     phoneProb @13 :Float32;
-    sleepProb @14 :Float32;
     notReadyProbDEPRECATED @12 :List(Float32);
     occludedProbDEPRECATED @10 :Float32;
     readyProbDEPRECATED @11 :List(Float32);
@@ -2225,7 +2224,7 @@ struct DriverStateDEPRECATED @0xb83c6cc593ed0a00 {
   stdDEPRECATED @2 :Float32;
 }
 
-struct DriverMonitoringStateDEPRECATED @0xb83cda094a1da284 {
+struct DriverMonitoringState @0xb83cda094a1da284 {
   events @18 :List(OnroadEvent);
   faceDetected @1 :Bool;
   isDistracted @2 :Bool;
@@ -2249,81 +2248,6 @@ struct DriverMonitoringStateDEPRECATED @0xb83cda094a1da284 {
   isPreviewDEPRECATED @15 :Bool;
   rhdCheckedDEPRECATED @5 :Bool;
   eventsDEPRECATED @0 :List(Car.OnroadEventDEPRECATED);
-}
-
-struct DriverMonitoringState {
-  lockout @0 :Bool;
-  lockoutCount @15 :Int8;
-  lockoutMinutesRemaining @11 :Int8;
-  alert3Count @12 :Int8;
-  noResponseCount @13 :Int8;
-  noResponseForceDecel @14 :Bool;
-
-  alwaysOn @3 :Bool;
-  alwaysOnLockout @4 :Bool;
-
-  alertLevel @5 :AlertLevel;
-  activePolicy @6 :MonitoringPolicy;
-  isRHD @7 :Bool;
-  rhdCalibration @8 :CalibrationState;
-
-  visionPolicyState @9 :VisionPolicyState;
-  wheeltouchPolicyState @10 :WheeltouchPolicyState;
-
-  enum AlertLevel {
-    none @0;
-    one @1;
-    two @2;
-    three @3;
-  }
-
-  enum MonitoringPolicy {
-    wheeltouch @0;
-    vision @1;
-  }
-
-  struct VisionPolicyState {
-    awarenessPercent @0 :Int8;
-    awarenessStep @1 :Float32;
-    isDistracted @2 :Bool;
-    distractedTypes @3 :DistractedTypes;
-
-    faceDetected @4 :Bool;
-    pose @5 :Pose;
-    wheeltouchFallbackPercent @6 :Int8;
-    uncertainOffroadAlertPercent @7 :Int8;
-
-    struct DistractedTypes {
-      pose @0: Bool;
-      eye @1: Bool;
-      phone @2: Bool;
-    }
-
-    struct Pose {
-      pitch @0 :Float32;
-      yaw @1 :Float32;
-      pitchCalib @2 :CalibrationState;
-      yawCalib @3 :CalibrationState;
-      calibrated @4 :Bool;
-      uncertainty @5 :Float32;
-    }
-  }
-
-  struct WheeltouchPolicyState {
-    awarenessPercent @0 :Int8;
-    awarenessStep @1 :Float32;
-    driverInteracting @2 :Bool;
-  }
-
-  struct CalibrationState {
-    calibratedPercent @0 :Int8;
-    offset @1 :Float32;
-  }
-
-  deprecated :group {
-    alertCountLockoutPercent @1 :Int8;
-    alertTimeLockoutPercent @2 :Int8;
-  }
 }
 
 struct Boot {
@@ -2646,7 +2570,7 @@ struct Event {
     thumbnail @66: Thumbnail;
     onroadEvents @134: List(OnroadEvent);
     carParams @69: Car.CarParams;
-    driverMonitoringState @165: DriverMonitoringState;
+    driverMonitoringState @71: DriverMonitoringState;
     livePose @129 :LivePose;
     modelV2 @75 :ModelDataV2;
     drivingModelData @128 :DrivingModelData;
@@ -2769,7 +2693,6 @@ struct Event {
     wifiScanDEPRECATED @29 :List(Legacy.WifiScan);
     uiNavigationEventDEPRECATED @50 :Legacy.UiNavigationEvent;
     liveMapDataDEPRECATED @62 :LiveMapDataDEPRECATED;
-    driverMonitoringStateDEPRECATED @71 :DriverMonitoringStateDEPRECATED;
     gpsPlannerPointsDEPRECATED @40 :Legacy.GPSPlannerPoints;
     gpsPlannerPlanDEPRECATED @41 :Legacy.GPSPlannerPlan;
     applanixRawDEPRECATED @42 :Data;

@@ -7,7 +7,7 @@ from iqdbc.car.subaru.values import DBC, CanBus, SubaruFlags
 from iqdbc.car import CanSignalRateCalculator
 
 from iqdbc.lvbs.car.subaru.aol import AolCarState
-from iqdbc.lvbs.car.subaru.stop_and_go import IQStopAndGoState
+from iqdbc.lvbs.car.subaru.creep_assist import IQStopAndGoState
 
 
 class CarState(CarStateBase, AolCarState, IQStopAndGoState):

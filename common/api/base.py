@@ -3,12 +3,23 @@ import os
 import requests
 import unicodedata
 from datetime import datetime, timedelta, UTC
+from functools import lru_cache
 from openpilot.system.hardware.hw import Paths
 from openpilot.system.version import get_version
 
 # name: jwt signature algorithm
 KEYS = {"id_rsa": "RS256",
         "id_ecdsa": "ES256"}
+
+
+@lru_cache(maxsize=4)
+def load_signing_key(private_key: str):
+  # PyJWT re-parses a PEM string on every encode; an RSA parse is ~40ms, so cache the key object
+  try:
+    from cryptography.hazmat.primitives.serialization import load_pem_private_key
+    return load_pem_private_key(private_key.encode(), password=None)
+  except Exception:
+    return private_key
 
 
 class BaseApi:
@@ -38,7 +49,8 @@ class BaseApi:
     }
     if payload_extra is not None:
       payload.update(payload_extra)
-    token = jwt.encode(payload, self.private_key, algorithm=self.jwt_algorithm)
+    key = load_signing_key(self.private_key) if self.private_key else self.private_key
+    token = jwt.encode(payload, key, algorithm=self.jwt_algorithm)
     if isinstance(token, bytes):
       token = token.decode('utf8')
     return token

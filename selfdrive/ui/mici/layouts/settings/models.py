@@ -223,7 +223,7 @@ class ModelsLayoutMici(NavScroller):
 
   @staticmethod
   def _read_favorites() -> set:
-    favs = ui_state.params.get("ModelManager_Favs")
+    favs = ui_state.params.get("IQModelFavorites")
     return set(favs.split(';')) if favs else set()
 
   def _toggle_favorite(self, bundle) -> bool:
@@ -232,7 +232,7 @@ class ModelsLayoutMici(NavScroller):
       favs.discard(bundle.ref)
     else:
       favs.add(bundle.ref)
-    ui_state.params.put("ModelManager_Favs", ';'.join(sorted(favs)))
+    ui_state.params.put("IQModelFavorites", ';'.join(sorted(favs)))
     return bundle.ref in favs
 
   def _confirm_clear_cache(self):

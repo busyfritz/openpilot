@@ -8,7 +8,7 @@ from iqdbc.car.tesla.teslacan import TeslaCAN
 from iqdbc.car.tesla.values import CarControllerParams
 from iqdbc.car.vehicle_model import VehicleModel
 from openpilot.iqpilot.selfdrive.car.enhanced_stock_longitudinal_control import get_set_speed_kph_from_params
-from iqdbc.lvbs.car.tesla.coop_steering import CoopSteeringCarController
+from iqdbc.lvbs.car.tesla.torque_blend import TorqueBlendController
 from iqdbc.lvbs.car.tesla.values import TeslaFlagsIQ
 
 
@@ -22,7 +22,7 @@ def get_safety_CP():
 class CarController(CarControllerBase):
   def __init__(self, dbc_names, CP, CP_IQ):
     CarControllerBase.__init__(self, dbc_names, CP, CP_IQ)
-    self.coop_steer = CoopSteeringCarController()
+    self.coop_steer = TorqueBlendController()
     self.apply_angle_last = 0
     self.packer = CANPacker(dbc_names[Bus.party])
     self.tesla_can = TeslaCAN(CP, self.packer)
@@ -99,7 +99,7 @@ class CarController(CarControllerBase):
     # TODO: HUD control
     new_actuators = actuators.as_builder()
     new_actuators.steeringAngleDeg = self.apply_angle_last
-    new_actuators.accel = self.coop_steer.coop_apply_angle_last_sat  # debug
+    new_actuators.accel = self.coop_steer.blend_apply_angle_last_sat  # debug
     new_actuators.curvature = float(self.coop_steer.debug_angle_desired_limited)  # debug
     new_actuators.torque = float(self.coop_steer.override_angle_accu)  # debug
 

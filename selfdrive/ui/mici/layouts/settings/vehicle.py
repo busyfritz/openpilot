@@ -69,17 +69,17 @@ class VehicleLayoutMici(NavScroller):
     self._vehicle_btn = BigButton("vehicle")
     self._vehicle_btn.set_click_callback(self._on_vehicle_clicked)
 
-    self._toyota_long = BigParamControl("enforce factory long.", "ToyotaEnforceStockLongitudinal",
+    self._toyota_long = BigParamControl("enforce factory long.", "IQToyotaFactoryLong",
                                         toggle_callback=self._on_toyota_long)
-    self._hyundai_tuning = MappedParamToggle("hyundai long. tuning", "HyundaiLongitudinalTuning",
+    self._hyundai_tuning = MappedParamToggle("hyundai long. tuning", "IQHyundaiLongTune",
                                              ["off", "dynamic", "predictive"], [0, 1, 2])
-    self._subaru_snag = BigParamControl("creep from standstill (beta)", "SubaruStopAndGo")
-    self._subaru_manual = BigParamControl("stop and go manual brake", "SubaruStopAndGoManualParkingBrake")
+    self._subaru_snag = BigParamControl("creep from standstill (beta)", "IQSubaruCreepAssist")
+    self._subaru_manual = BigParamControl("stop and go manual brake", "IQSubaruCreepAssistManualBrake")
     self._vw_pq_hca = BigParamControl("PQ HCA status 7 mode", "pqhca5or7Toggle")
     self._vw_lateral = BigParamControl("lateral when cruise faulted", "AllowLateralWhenLongUnavailable")
     self._vw_mqb_acc_resume = BigParamControl("MQB ACC resume", "iqMqbAccResume")
     self._vw_mqb_steering_lockout = BigParamControl("MQB steering lockout", "iqMqbSteeringLockout")
-    self._tesla_vtb = BigParamControl("virtual torque blending", "TeslaCoopSteering")
+    self._tesla_vtb = BigParamControl("virtual torque blending", "IQTeslaTorqueBlend")
 
     self._brand_widgets = {
       "toyota": [self._toyota_long],

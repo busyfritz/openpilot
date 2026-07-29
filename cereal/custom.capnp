@@ -315,6 +315,9 @@ struct IQOnroadEvent @0xf4621d3ee9233bc9 {
 
     # construction zone assist
     constructionZoneDetected @30;
+
+    # model management
+    modelUpdating @31;
   }
 }
 
@@ -329,6 +332,7 @@ struct IQCarParams @0xd4189b5c8aca9f78 {
 
   iqLateralNet @4 :LateralNet;
   longitudinalStoppingSpeedOverride @5 :Float32;  # m/s; zero keeps the upstream default
+  stoppingDecelRateOverride @6 :Float32;          # m/s^3; zero keeps the upstream default
 
   struct LateralNet {
     fuzzyFingerprint @0 :Bool;

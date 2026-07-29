@@ -20,25 +20,19 @@ from openpilot.selfdrive.locationd.calibration_helpers import get_calibrated_rpy
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import CLContext, MonitoringModelFrame
 from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid, safe_exp
 from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
-from openpilot.system.hardware import HARDWARE
 
 PROCESS_NAME = "selfdrive.modeld.dmonitoringmodeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
-MODELS_PATH = Path(__file__).parent / 'models'
-
-
-def get_model_paths(device_type: str) -> tuple[Path, Path]:
-  model_name = 'dmonitoring_model_mici' if device_type == 'mici' else 'dmonitoring_model'
-  return MODELS_PATH / f'{model_name}_tinygrad.pkl', MODELS_PATH / f'{model_name}_metadata.pkl'
+MODEL_PKL_PATH = Path(__file__).parent / 'models/dmonitoring_model_tinygrad.pkl'
+METADATA_PATH = Path(__file__).parent / 'models/dmonitoring_model_metadata.pkl'
 
 
 class ModelState:
   inputs: dict[str, np.ndarray]
   output: np.ndarray
 
-  def __init__(self, cl_ctx, device_type=None):
-    model_path, metadata_path = get_model_paths(device_type or HARDWARE.get_device_type())
-    with open(metadata_path, 'rb') as f:
+  def __init__(self, cl_ctx):
+    with open(METADATA_PATH, 'rb') as f:
       model_metadata = pickle.load(f)
       self.input_shapes = model_metadata['input_shapes']
       self.output_slices = model_metadata['output_slices']
@@ -49,7 +43,7 @@ class ModelState:
     }
 
     self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
-    with open(model_path, "rb") as f:
+    with open(MODEL_PKL_PATH, "rb") as f:
       self.model_run = pickle.load(f)
 
   def run(self, buf: VisionBuf, calib: np.ndarray, transform: np.ndarray) -> tuple[np.ndarray, float]:
@@ -81,10 +75,8 @@ def parse_model_output(model_output):
     face_descs = model_output[f'face_descs_{ds_suffix}']
     parsed[f'face_descs_{ds_suffix}'] = face_descs[:, :-6]
     parsed[f'face_descs_{ds_suffix}_std'] = safe_exp(face_descs[:, -6:])
-    for key in ['face_prob', 'left_eye_prob', 'right_eye_prob','left_blink_prob', 'right_blink_prob', 'sunglasses_prob', 'using_phone_prob', 'sleep_prob']:
-      output_key = f'{key}_{ds_suffix}'
-      if output_key in model_output:
-        parsed[output_key] = sigmoid(model_output[output_key])
+    for key in ['face_prob', 'left_eye_prob', 'right_eye_prob','left_blink_prob', 'right_blink_prob', 'sunglasses_prob', 'using_phone_prob']:
+      parsed[f'{key}_{ds_suffix}'] = sigmoid(model_output[f'{key}_{ds_suffix}'])
   return parsed
 
 def fill_driver_data(msg, model_output, ds_suffix):
@@ -99,8 +91,6 @@ def fill_driver_data(msg, model_output, ds_suffix):
   msg.rightBlinkProb = model_output[f'right_blink_prob_{ds_suffix}'][0, 0].item()
   msg.sunglassesProb = model_output[f'sunglasses_prob_{ds_suffix}'][0, 0].item()
   msg.phoneProb = model_output[f'using_phone_prob_{ds_suffix}'][0, 0].item()
-  sleep_prob = model_output.get(f'sleep_prob_{ds_suffix}')
-  msg.sleepProb = sleep_prob[0, 0].item() if sleep_prob is not None else 0.
 
 def get_driverstate_packet(model_output, frame_id: int, location_ts: int, exec_time: float, gpu_exec_time: float):
   msg = messaging.new_message('driverStateV2', valid=True)

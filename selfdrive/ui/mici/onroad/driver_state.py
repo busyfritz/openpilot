@@ -6,12 +6,12 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.widgets import Widget
 from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.selfdrive.monitoring.helpers import face_orientation_from_net
 
 AlertSize = log.SelfdriveState.AlertSize
 
 DEBUG = False
 ACTIVE_ACCENT = rl.Color(0x0C, 0x94, 0x96, 0xFF)
-CONE_COLOR_ORANGE = (255, 115, 0)
 
 LOOKING_CENTER_THRESHOLD_UPPER = math.radians(6)
 LOOKING_CENTER_THRESHOLD_LOWER = math.radians(3)
@@ -21,7 +21,6 @@ class DriverStateRenderer(Widget):
   BASE_SIZE = 60
   LINES_ANGLE_INCREMENT = 5
   LINES_STALE_ANGLES = 3.0  # seconds
-  AWARENESS_UNFULL_PERCENT = 95
 
   def __init__(self, lines: bool = False, inset: bool = False):
     super().__init__()
@@ -36,15 +35,11 @@ class DriverStateRenderer(Widget):
     self._is_active = False
     self._is_rhd = False
     self._face_detected = False
-    self._face_pitch = 0.
-    self._face_yaw = 0.
     self._should_draw = False
     self._force_active = False
     self._looking_center = False
-    self._awareness_unfull = False
 
     self._fade_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps)
-    self._color_fade_filter = FirstOrderFilter(1.0, 0.05, 1 / gui_app.target_fps)
     self._pitch_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps, initialized=False)
     self._yaw_filter = FirstOrderFilter(0.0, 0.05, 1 / gui_app.target_fps, initialized=False)
     self._rotation_filter = FirstOrderFilter(0.0, 0.1, 1 / gui_app.target_fps, initialized=False)
@@ -100,7 +95,6 @@ class DriverStateRenderer(Widget):
                     rl.Color(255, 255, 255, int(255 * 0.9 * self._fade_filter.x)))
 
     if self.effective_active:
-      active_amount = self._color_fade_filter.update(0.0 if self._awareness_unfull else 1.0)
       source_rect = rl.Rectangle(0, 0, self._dm_cone.width, self._dm_cone.height)
       dest_rect = rl.Rectangle(
         self._rect.x + self._rect.width / 2,
@@ -110,16 +104,13 @@ class DriverStateRenderer(Widget):
       )
 
       if not self._lines:
-        r = int(round(ACTIVE_ACCENT.r * active_amount + CONE_COLOR_ORANGE[0] * (1 - active_amount)))
-        g = int(round(ACTIVE_ACCENT.g * active_amount + CONE_COLOR_ORANGE[1] * (1 - active_amount)))
-        b = int(round(ACTIVE_ACCENT.b * active_amount + CONE_COLOR_ORANGE[2] * (1 - active_amount)))
         rl.draw_texture_pro(
           self._dm_cone,
           source_rect,
           dest_rect,
           rl.Vector2(dest_rect.width / 2, dest_rect.height / 2),
           self._rotation_filter.x - 90,
-          rl.Color(r, g, b, int(255 * self._fade_filter.x)),
+          rl.Color(ACTIVE_ACCENT.r, ACTIVE_ACCENT.g, ACTIVE_ACCENT.b, int(255 * self._fade_filter.x)),
         )
 
       else:
@@ -159,12 +150,9 @@ class DriverStateRenderer(Widget):
     sm = ui_state.sm
 
     dm_state = sm["driverMonitoringState"]
-    self._is_active = dm_state.activePolicy == log.DriverMonitoringState.MonitoringPolicy.vision
+    self._is_active = dm_state.isActiveMode
     self._is_rhd = dm_state.isRHD
-    self._face_detected = dm_state.visionPolicyState.faceDetected
-    self._awareness_unfull = self.effective_active and dm_state.visionPolicyState.awarenessPercent < self.AWARENESS_UNFULL_PERCENT
-    self._face_pitch = dm_state.visionPolicyState.pose.pitch + math.radians(6)
-    self._face_yaw = -dm_state.visionPolicyState.pose.yaw
+    self._face_detected = dm_state.faceDetected
 
     driverstate = sm["driverStateV2"]
     driver_data = driverstate.rightDriverData if self._is_rhd else driverstate.leftDriverData
@@ -172,9 +160,24 @@ class DriverStateRenderer(Widget):
 
   def _update_state(self):
     # Get monitoring state
-    _ = self.get_driver_data()
-    pitch = self._pitch_filter.update(self._face_pitch)
-    yaw = self._yaw_filter.update(self._face_yaw)
+    driver_data = self.get_driver_data()
+    driver_orient = driver_data.faceOrientation
+
+    if len(driver_orient) != 3:
+      return
+
+    # Calibrate orientation so looking straight ahead at the road (instead of at the device) reads
+    # (0, 0), using live calibration. Makes the cone point in the correct direction. (stock PR #37149)
+    sm = ui_state.sm
+    if sm.valid['liveCalibration'] and len(sm['liveCalibration'].rpyCalib) == 3:
+      cal_rpy = sm['liveCalibration'].rpyCalib
+    else:
+      cal_rpy = [0.0, 0.0, 0.0]
+    _, pitch, yaw = face_orientation_from_net(driver_orient, driver_data.facePosition, cal_rpy)
+    yaw = -yaw  # undo sign flip in face_orientation_from_net to match UI convention
+
+    pitch = self._pitch_filter.update(pitch)
+    yaw = self._yaw_filter.update(yaw)
 
     # hysteresis on looking center
     if abs(pitch) < LOOKING_CENTER_THRESHOLD_LOWER and abs(yaw) < LOOKING_CENTER_THRESHOLD_LOWER:
@@ -195,8 +198,9 @@ class DriverStateRenderer(Widget):
       rl.draw_circle(int(pitch_x), 100, 5, rl.GREEN)
       rl.draw_circle(int(yaw_x), 120, 5, rl.GREEN)
 
-    # filter head rotation, handling wrap-around
-    rotation = math.degrees(math.atan2(pitch * 2, yaw))
+    # filter head rotation, handling wrap-around (bias pitch up since calib/DM pose isn't exact,
+    # and halve yaw sensitivity)
+    rotation = math.degrees(math.atan2((pitch + math.radians(6)) * 2, yaw))
     angle_diff = rotation - self._rotation_filter.x
     angle_diff = ((angle_diff + 180) % 360) - 180
     self._rotation_filter.update(self._rotation_filter.x + angle_diff)

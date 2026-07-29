@@ -88,9 +88,11 @@ class CarInterface(CarInterfaceBase):
     ret.steerActuatorDelay = 0.1
 
     if candidate in HONDA_BOSCH:
-      ret.longitudinalActuatorDelay = 0.5 # s
       if candidate in HONDA_BOSCH_RADARLESS:
         ret.stopAccel = CarControllerParams.BOSCH_ACCEL_MIN  # stock uses -4.0 m/s^2 once stopped but limited by safety model
+        ret.longitudinalActuatorDelay = 0.25 # s
+      else:
+        ret.longitudinalActuatorDelay = 0.5 # s
     else:
       # default longitudinal tuning for all hondas
       ret.longitudinalTuning.kiBP = [0., 5., 35.]
@@ -335,6 +337,12 @@ class CarInterface(CarInterfaceBase):
 
     stock_cp.autoResumeSng = stock_cp.autoResumeSng or ret.enableGasInterceptor
 
+    if candidate == CAR.HONDA_CITY_7G:
+      ret.longitudinalStoppingSpeedOverride = 2.0
+      ret.stoppingDecelRateOverride = 0.3
+    else:
+      ret.longitudinalStoppingSpeedOverride = 0.5
+      ret.stoppingDecelRateOverride = 0.1
 
     return ret
 

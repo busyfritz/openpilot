@@ -2,7 +2,7 @@ import json
 import os
 
 from iqdbc.car.common.basedir import BASEDIR
-from iqdbc.lvbs.car.platform_list import get_car_list
+from iqdbc.lvbs.car.car_catalog import build_car_catalog
 
 CATALOG_JSON = os.path.join(BASEDIR, "..", "..", "iqpilot", "selfdrive", "car", "vehicle_catalog.json")
 
@@ -18,7 +18,7 @@ def _decode(envelope) -> dict:
 
 class TestCarList:
   def test_generator(self):
-    generated = get_car_list()
+    generated = build_car_catalog()
     with open(CATALOG_JSON) as f:
       shipped = _decode(json.load(f))
 

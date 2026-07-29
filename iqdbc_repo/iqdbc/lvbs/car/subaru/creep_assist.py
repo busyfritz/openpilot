@@ -68,7 +68,7 @@ class IQStopAndGoController:
       return held_long_enough
     return self._epb_pulse(standing and lead_pulling_away)
 
-  def create_stop_and_go(self, packer, CC: structs.CarControl, CS: CarStateBase, frame: int) -> list[CanData]:
+  def create_creep_assist(self, packer, CC: structs.CarControl, CS: CarStateBase, frame: int) -> list[CanData]:
     if not self.enabled:
       return []
 

@@ -43,6 +43,7 @@ from openpilot.iqpilot.selfdrive.iqmodeld.models.helpers import (
   bundle_files_ready,
   get_active_bundle,
   get_runtime_bundle_upgrade,
+  is_default_bundle,
   persist_active_bundle,
 )
 
@@ -56,6 +57,7 @@ class IQModelManager(_BaseIQModelManager):
   def __init__(self):
     super().__init__()
     self._validated_active_key: tuple[tuple[str, str], ...] | None = None
+    self._manifest_refresh_key: tuple[tuple[str, str], ...] | None = None
 
   @staticmethod
   def _bundle_index(bundle) -> int | None:
@@ -190,6 +192,58 @@ class IQModelManager(_BaseIQModelManager):
     if bundle_index is not None and self._download_index() is None:
       self.params.put(_DOWNLOAD_INDEX_KEY, bundle_index)
 
+  def _find_manifest_counterpart(self, target):
+    # never match by index: indexes shift between manifest generations, and a
+    # positional match could redownload a different model than the user selected
+    for attr in ("ref", "internalName", "displayName"):
+      value = getattr(target, attr, None)
+      if not value:
+        continue
+      for bundle in self.available_models:
+        if getattr(bundle, attr, None) == value:
+          return bundle
+    return None
+
+  def _queue_active_manifest_refresh(self) -> None:
+    active = self.active_bundle
+    if active is None or is_default_bundle(active):
+      return
+    if self._download_index() is not None:
+      return
+
+    counterpart = self._find_manifest_counterpart(active)
+    if counterpart is None:
+      return
+    counterpart_index = self._bundle_index(counterpart)
+    if counterpart_index is None:
+      return
+
+    active_files = dict(self._bundle_files(active))
+    stale = False
+    for filename, sha in self._bundle_files(counterpart):
+      if not sha:
+        continue
+      active_sha = active_files.get(filename)
+      # an empty recorded hash can't prove a mismatch, so it never triggers a redownload
+      if active_sha is None or (active_sha and active_sha.lower() != sha.lower()):
+        stale = True
+        break
+    if not stale:
+      self._manifest_refresh_key = None
+      return
+
+    # the manifest may be an expired offline cache, so keep the active bundle and its
+    # files in place: the download flow replaces artifacts atomically and only persists
+    # the counterpart as active once everything landed. One attempt per bundle per run
+    # so a dead network doesn't turn the 1Hz loop into a download-retry storm.
+    key = self._bundle_validation_key(active)
+    if key == self._manifest_refresh_key:
+      return
+    self._manifest_refresh_key = key
+
+    cloudlog.warning(f"Active model {_display_bundle_name(active)} artifacts are stale vs current manifest; queueing redownload")
+    self.params.put(_DOWNLOAD_INDEX_KEY, counterpart_index)
+
   async def _download_file(self, url: str, path: str, model) -> None:
     temp_path = f"{path}.download"
     self._download_start_times[model.fileName] = time.monotonic()
@@ -302,6 +356,7 @@ class IQModelManager(_BaseIQModelManager):
         self.active_bundle = get_active_bundle(self.params)
         self._queue_active_redownload_if_invalid()
         self._queue_tinygrad_upgrade()
+        self._queue_active_manifest_refresh()
 
         if (index_to_download := self._download_index()) is not None:
           if model_to_download := next((model for model in self.available_models if model.index == index_to_download), None):

@@ -29,7 +29,7 @@ from openpilot.iqpilot.ui.onroad.augmented_road_view import BORDER_COLORS_IQ
 
 if gui_app.iqpilot_ui():
   from openpilot.iqpilot.ui.mici.onroad.hud_renderer import IQMiciHudRenderer as HudRenderer
-  from openpilot.iqpilot.ui.mici.onroad.road_name import RoadNameRendererMici
+  from openpilot.iqpilot.ui.mici.onroad.road_label import RoadNameRendererMici
   from openpilot.selfdrive.ui.ui_state import OnroadTimerStatus
 
 OpState = log.SelfdriveState.OpenpilotState

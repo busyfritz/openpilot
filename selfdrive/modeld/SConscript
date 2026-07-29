@@ -60,7 +60,7 @@ def host_tinygrad_flags(*, float16=False):
   return f"{base} FLOAT16=1" if float16 else base
 
 # Compile small models
-for model_name in ['dmonitoring_model', 'dmonitoring_model_mici']:
+for model_name in ['dmonitoring_model']:
   # The optimization flags are mandatory on QCOM: without FLOAT16/NOLOCALS/JIT_BATCH_SIZE/OPENPILOT_HACKS these
   # models compile to unoptimized QCOM kernels and run ~20x slower (dmonitoring_model: ~300ms -> ~14ms),
   # which starves the driving model on the shared Adreno. IMAGE=2 (not upstream's IMAGE=1) because the

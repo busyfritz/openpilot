@@ -10,7 +10,7 @@ from openpilot.selfdrive.ui.widgets.offroad_alerts import UpdateAlert, OffroadAl
 from openpilot.selfdrive.ui.widgets.setup import SetupWidget
 from openpilot.selfdrive.ui.widgets.inspire_widget import InspireWidget
 from openpilot.selfdrive.ui.widgets.map_panel_widget import MapPanelWidget
-from openpilot.iqpilot.ui.layouts.settings.trips import TripsLayout
+from openpilot.iqpilot.ui.layouts.settings.drive_history import TripsLayout
 from openpilot.selfdrive.ui.layouts.sidebar import NETWORK_TYPES
 from openpilot.selfdrive.ui.lib.wifi_ssid import current_ssid
 from openpilot.selfdrive.ui.ui_state import ui_state

@@ -214,7 +214,7 @@ class TogglesLayout(Widget):
     toyota_stock_long_forced = bool(
       ui_state.CP is not None and
       ui_state.CP.brand == "toyota" and
-      self._params.get_bool("ToyotaEnforceStockLongitudinal")
+      self._params.get_bool("IQToyotaFactoryLong")
     )
     iq_modes_selectable = alpha_available or alpha_requested or toyota_stock_long_forced
     availability_note = ""
@@ -268,7 +268,7 @@ class TogglesLayout(Widget):
   def _apply_longitudinal_control_mode(self, button_index: int):
     # 0 = Stock ACC, 1 = IQ.Standard, 2 = IQ.Dynamic, 3 = IQ.Pilot
     previous_alpha = self._params.get_bool("AlphaLongitudinalEnabled")
-    previous_toyota_stock_long = self._params.get_bool("ToyotaEnforceStockLongitudinal")
+    previous_toyota_stock_long = self._params.get_bool("IQToyotaFactoryLong")
 
     if button_index == 0:
       self._params.put_bool("AlphaLongitudinalEnabled", False)
@@ -289,9 +289,9 @@ class TogglesLayout(Widget):
       self._params.put_bool("IQDynamicMode", False)
 
     if button_index != 0 and previous_toyota_stock_long:
-      self._params.put_bool("ToyotaEnforceStockLongitudinal", False)
+      self._params.put_bool("IQToyotaFactoryLong", False)
 
-    if previous_alpha != self._params.get_bool("AlphaLongitudinalEnabled") or previous_toyota_stock_long != self._params.get_bool("ToyotaEnforceStockLongitudinal"):
+    if previous_alpha != self._params.get_bool("AlphaLongitudinalEnabled") or previous_toyota_stock_long != self._params.get_bool("IQToyotaFactoryLong"):
       self._params.put_bool("OnroadCycleRequested", True)
 
   def _toggle_callback(self, state: bool, param: str):

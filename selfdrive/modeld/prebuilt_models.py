@@ -11,7 +11,7 @@ BASEDIR = MODELD_DIR.parents[1]
 TINYGRAD_DIR = BASEDIR / 'tinygrad_repo'
 METADATA_SCRIPT = MODELD_DIR / 'get_model_metadata.py'
 
-MODEL_NAMES = ['dmonitoring_model', 'dmonitoring_model_mici']
+MODEL_NAMES = ['dmonitoring_model']
 
 
 def _hash_file(h, path: Path) -> None:

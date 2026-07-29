@@ -337,6 +337,13 @@ _NOTICE_EVENTS: EVENTS_IQ_TYPE = {
       Priority.MID, VisualAlert.none, AudibleAlert.prompt, 3.),
   },
 
+  # outranks the generic processNotRunning alert so the driver sees why engagement is blocked
+  EventNameIQ.modelUpdating: {
+    ET.NO_ENTRY: NoEntryAlert("Update finishes while parked with internet",
+                              alert_text_1="Driving Model Updating",
+                              priority=Priority.MID),
+  },
+
 }
 
 EVENTS_IQ: EVENTS_IQ_TYPE = {**_GUIDANCE_EVENTS, **_ENGAGE_EVENTS, **_CABIN_BLOCK_EVENTS, **_NOTICE_EVENTS}

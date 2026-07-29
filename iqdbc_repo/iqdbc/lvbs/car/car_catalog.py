@@ -5,7 +5,7 @@ from iqdbc.car.docs import get_all_footnotes, get_params_for_docs
 from iqdbc.car.values import PLATFORMS
 
 
-def get_car_list() -> dict[str, dict[str, list[str] | str]]:
+def build_car_catalog() -> dict[str, dict[str, list[str] | str]]:
   collected_footnote = get_all_footnotes()
   sorted_list: dict[str, dict[str, list[str] | str]] = collect_car_docs(PLATFORMS, collected_footnote)
   return sorted_list
@@ -57,6 +57,6 @@ def collect_car_docs(platforms, footnotes) -> dict[str, dict[str, list[str] | st
 
 
 if __name__ == "__main__":
-  # get_car_list() is the raw platform source; the shipped catalog is generated
+  # build_car_catalog() is the raw platform source; the shipped catalog is generated
   # (and encoded to its on-disk envelope) by the main-repo entry point:
   print("run: python -m openpilot.iqpilot.selfdrive.car.vehicle_catalog")

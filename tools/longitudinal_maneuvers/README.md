@@ -6,9 +6,9 @@ Test your vehicle's longitudinal control tuning with this tool. The tool will te
 
 ## Instructions
 
-1. Check out a development branch such as `master` on your comma device.
-2. Locate either a large empty parking lot or road devoid of any car or foot traffic. Flat, straight road is preferred. The full maneuver suite can take 1 mile or more if left running, however it is recommended to disengage openpilot between maneuvers and turn around if there is not enough space.
-3. Turn off the vehicle and set this parameter which will signal to openpilot to start the longitudinal maneuver daemon:
+1. Check out a development branch such as `master-mici` on your device. The toggle is hidden on release branches.
+2. Locate either a large empty parking lot or road devoid of any car or foot traffic. Flat, straight road is preferred. The full maneuver suite can take 1 mile or more if left running, however it is recommended to disengage IQ.Pilot between maneuvers and turn around if there is not enough space.
+3. Turn off the vehicle and enable "Longitudinal Maneuver Mode" in Settings > Developer. The toggle requires IQ.Pilot longitudinal control and only enables while offroad. Alternatively, set the parameter manually:
 
    ```sh
    echo -n 1 > /data/params/d/LongitudinalManeuverMode
@@ -42,7 +42,19 @@ Test your vehicle's longitudinal control tuning with this tool. The tool will te
     plotting maneuver: creep: alternate between +1m/s^2 and -1m/s^2, runs: 2
     plotting maneuver: gas step response: +1m/s^2 from 20mph, runs: 2
 
-    Report written to /home/batman/openpilot/tools/longitudinal_maneuvers/longitudinal_reports/LEXUS_ES_TSS2_57048cfce01d9625_0000010e--5b26bc3be7.html
+    Report written to tools/longitudinal_maneuvers/longitudinal_reports/LEXUS_ES_TSS2_57048cfce01d9625_0000010e--5b26bc3be7.html
     ```
 
-You can reach out on [Discord](https://discord.comma.ai) if you have any questions about these instructions or the tool itself.
+   `generate_report.py` also takes a path to a local `rlog.zst` or a directory of them.
+
+## Testing the tooling without a car
+
+`sim_maneuvers.py` runs `maneuversd` as a real process against a synthetic powertrain and writes an rlog
+that `generate_report.py` reads. Use it to verify the daemon and the report generator after changing either:
+
+```sh
+$ python tools/longitudinal_maneuvers/sim_maneuvers.py --out /tmp/long/rlog.zst
+$ python tools/longitudinal_maneuvers/generate_report.py /tmp/long/rlog.zst
+```
+
+The full suite takes about 4 minutes of wall clock; `--max-maneuvers N` stops early.

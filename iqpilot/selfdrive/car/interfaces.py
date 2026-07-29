@@ -12,11 +12,11 @@ _ANGLE = _dbc.CarParams.SteerControlType.angle
 
 # Port tunables surfaced to the fingerprint step, flat so the read is one pass.
 _TUNABLES = (
-  "HyundaiLongitudinalTuning",
-  "SubaruStopAndGo",
-  "SubaruStopAndGoManualParkingBrake",
-  "TeslaCoopSteering",
-  "ToyotaEnforceStockLongitudinal",
+  "IQHyundaiLongTune",
+  "IQSubaruCreepAssist",
+  "IQSubaruCreepAssistManualBrake",
+  "IQTeslaTorqueBlend",
+  "IQToyotaFactoryLong",
   "ToyotaSnGHack",
 )
 

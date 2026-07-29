@@ -13,12 +13,6 @@ from openpilot.selfdrive.locationd.calibration_helpers import get_calibrated_rpy
 from openpilot.system.hardware import HARDWARE
 
 EventName = log.OnroadEvent.EventName
-AlertLevel = log.DriverMonitoringState.AlertLevel
-MonitoringPolicy = log.DriverMonitoringState.MonitoringPolicy
-
-
-def to_percent(v):
-  return int(min(max(v * 100., 0.), 100.))
 
 # ******************************************************************************************
 #  NOTE: To fork maintainers.
@@ -397,61 +391,44 @@ class DriverMonitoring:
     alert = None
     if self.awareness <= 0.:
       # terminal red alert: disengagement required
-      alert = EventName.driverDistracted3 if self.active_monitoring_mode else EventName.driverUnresponsive3
+      alert = EventName.driverDistracted if self.active_monitoring_mode else EventName.driverUnresponsive
       self.terminal_time += 1
       if awareness_prev > 0.:
         self.terminal_alert_cnt += 1
     elif self.awareness <= self.threshold_prompt:
       # prompt orange alert
-      alert = EventName.driverDistracted2 if self.active_monitoring_mode else EventName.driverUnresponsive2
+      alert = EventName.promptDriverDistracted if self.active_monitoring_mode else EventName.promptDriverUnresponsive
     elif self.awareness <= self.threshold_pre and not always_on_lowspeed_exemption:
       # pre green alert
-      alert = EventName.driverDistracted1 if self.active_monitoring_mode else EventName.driverUnresponsive1
+      alert = EventName.preDriverDistracted if self.active_monitoring_mode else EventName.preDriverUnresponsive
 
     if alert is not None:
       self.current_events.add(alert)
 
   def get_state_packet(self, valid=True):
+    # build driverMonitoringState packet
     dat = messaging.new_message('driverMonitoringState', valid=valid)
-    dm = dat.driverMonitoringState
-
-    dm.lockout = self.too_distracted
-    dm.alert3Count = self.terminal_alert_cnt
-    dm.noResponseCount = int(self.terminal_time >= self.settings._MAX_TERMINAL_DURATION)
-    dm.noResponseForceDecel = self.awareness <= 0.
-    dm.alwaysOn = self.always_on
-    dm.alwaysOnLockout = self.always_on and self.awareness <= self.threshold_prompt
-    if self.awareness <= 0.:
-      dm.alertLevel = AlertLevel.three
-    elif self.awareness <= self.threshold_prompt:
-      dm.alertLevel = AlertLevel.two
-    elif self.awareness <= self.threshold_pre:
-      dm.alertLevel = AlertLevel.one
-    dm.activePolicy = MonitoringPolicy.vision if self.active_monitoring_mode else MonitoringPolicy.wheeltouch
-    dm.isRHD = self.wheel_on_right
-    dm.rhdCalibration.calibratedPercent = to_percent(self.wheelpos.prob_offseter.filtered_stat.n / self.settings._WHEELPOS_FILTER_MIN_COUNT)
-    dm.rhdCalibration.offset = self.wheelpos.prob_offseter.filtered_stat.M
-
-    dm.visionPolicyState.awarenessPercent = to_percent(self.awareness if self.active_monitoring_mode else self.awareness_active)
-    dm.visionPolicyState.awarenessStep = self.step_change if self.active_monitoring_mode else 0.
-    dm.visionPolicyState.isDistracted = self.driver_distracted
-    dm.visionPolicyState.distractedTypes.pose = DistractedType.DISTRACTED_POSE in self.distracted_types
-    dm.visionPolicyState.distractedTypes.eye = DistractedType.DISTRACTED_BLINK in self.distracted_types
-    dm.visionPolicyState.distractedTypes.phone = DistractedType.DISTRACTED_PHONE in self.distracted_types
-    dm.visionPolicyState.faceDetected = self.face_detected
-    dm.visionPolicyState.pose.pitch = self.pose.pitch
-    dm.visionPolicyState.pose.yaw = self.pose.yaw
-    dm.visionPolicyState.pose.calibrated = self.pose.calibrated
-    dm.visionPolicyState.pose.pitchCalib.calibratedPercent = to_percent(self.pose.pitch_offseter.filtered_stat.n / self.settings._POSE_OFFSET_MIN_COUNT)
-    dm.visionPolicyState.pose.pitchCalib.offset = self.pose.pitch_offseter.filtered_stat.M
-    dm.visionPolicyState.pose.yawCalib.calibratedPercent = to_percent(self.pose.yaw_offseter.filtered_stat.n / self.settings._POSE_OFFSET_MIN_COUNT)
-    dm.visionPolicyState.pose.yawCalib.offset = self.pose.yaw_offseter.filtered_stat.M
-    dm.visionPolicyState.pose.uncertainty = max(self.pose.pitch_std, self.pose.yaw_std)
-    dm.visionPolicyState.wheeltouchFallbackPercent = to_percent(self.hi_stds / self.settings._HI_STD_FALLBACK_TIME)
-    dm.visionPolicyState.uncertainOffroadAlertPercent = to_percent(self.dcam_uncertain_cnt / int(60 / self.settings._DT_DMON))
-
-    dm.wheeltouchPolicyState.awarenessPercent = to_percent(self.awareness if not self.active_monitoring_mode else self.awareness_passive)
-    dm.wheeltouchPolicyState.awarenessStep = self.step_change if not self.active_monitoring_mode else 0.
+    dat.driverMonitoringState = {
+      "events": self.current_events.to_msg(),
+      "faceDetected": self.face_detected,
+      "isDistracted": self.driver_distracted,
+      "distractedType": sum(self.distracted_types),
+      "awarenessStatus": self.awareness,
+      "posePitchOffset": self.pose.pitch_offseter.filtered_stat.mean(),
+      "posePitchValidCount": self.pose.pitch_offseter.filtered_stat.n,
+      "poseYawOffset": self.pose.yaw_offseter.filtered_stat.mean(),
+      "poseYawValidCount": self.pose.yaw_offseter.filtered_stat.n,
+      "phoneProbOffset": self.phone.prob_offseter.filtered_stat.mean(),
+      "phoneProbValidCount": self.phone.prob_offseter.filtered_stat.n,
+      "stepChange": self.step_change,
+      "awarenessActive": self.awareness_active,
+      "awarenessPassive": self.awareness_passive,
+      "isLowStd": self.pose.low_std,
+      "hiStdCount": self.hi_stds,
+      "isActiveMode": self.active_monitoring_mode,
+      "isRHD": self.wheel_on_right,
+      "uncertainCount": self.dcam_uncertain_cnt,
+    }
     return dat
 
   def run_step(self, sm, demo=False):

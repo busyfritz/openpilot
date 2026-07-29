@@ -16,13 +16,13 @@
   },
   "python/iqpilot_private/konn3kt/iqlvbs/alc.cpython-312-aarch64-linux-gnu.so": {
     "mode": 493,
-    "sha256": "77a601a12a498f09f01c4b1618e164638d5d9702913b6d5bb30a3c729a1c7d54",
+    "sha256": "16990383c7ba1d2f3d33e5e4c1746019101bc79bed867721b51de853a68002ed",
     "size": 401688
   },
   "python/iqpilot_private/konn3kt/iqlvbs/vehicle_state.cpython-312-aarch64-linux-gnu.so": {
     "mode": 493,
-    "sha256": "ca91f99d94c8bb7842332a69896d4b3a31c109c027426d1d7386876f11710d80",
-    "size": 69696
+    "sha256": "bd060a8527d21501ce866f24d055f1c8bb03209b2730eb745b786780aace0aae",
+    "size": 69688
   },
   "runtime": {
     "entries": {
@@ -37,7 +37,7 @@
     }
   },
   "signatures": {
-    "python/iqpilot_private/konn3kt/iqlvbs/alc.cpython-312-aarch64-linux-gnu.so": "4KY001fMJhdkiQNoUXbvtOKQ2nWocmg9ZL0umWnDjAztueIstXBoc1iqW83plm2Xq0jR9NLk1Jd4yl3AydWFBA==",
-    "python/iqpilot_private/konn3kt/iqlvbs/vehicle_state.cpython-312-aarch64-linux-gnu.so": "JqSaxsDJT9q0UYgVJUo9Pqm0J0Aqwy5gIa2C8n9/ioOg/fV6PLn2KiVGn6470U4F5oNaaOgAmm+AM9jwYrZXAA=="
+    "python/iqpilot_private/konn3kt/iqlvbs/alc.cpython-312-aarch64-linux-gnu.so": "IVz01J4HpdUHDrjPP9yB+9ksGFberB9MeFiCNLcv8hMzXCLIjIATl3JXTwpBqU8Kad/q683nkhgL5IJ3tCKdCw==",
+    "python/iqpilot_private/konn3kt/iqlvbs/vehicle_state.cpython-312-aarch64-linux-gnu.so": "/aW/StEMRpge+zzihQDK7VPLmKhgwCucX8JielvPnPTud/mk0pmCy5pE8fB+TbwtWZCBfVhEd1bidRgsBqZfBA=="
   }
 }
