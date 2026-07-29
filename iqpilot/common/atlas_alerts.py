@@ -214,9 +214,10 @@ class NoEntryCard(AlertCard):
   def __init__(self,
                alert_text_2: str,
                alert_text_1: str = "openpilot Unavailable",
-               visual_alert: car.CarControl.HUDControl.VisualAlert = VisualAlert.none):
+               visual_alert: car.CarControl.HUDControl.VisualAlert = VisualAlert.none,
+               priority: Tier = Tier.LOW):
     primary, secondary, size = _mici_reframe(alert_text_1, alert_text_2)
-    super().__init__(primary, secondary, AlertStatus.normal, size, Tier.LOW, visual_alert, AudibleAlert.refuse, 3.0)
+    super().__init__(primary, secondary, AlertStatus.normal, size, priority, visual_alert, AudibleAlert.refuse, 3.0)
 
 
 class GentleDisableCard(AlertCard):

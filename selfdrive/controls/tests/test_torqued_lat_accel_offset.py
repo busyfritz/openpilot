@@ -1,8 +1,8 @@
 import numpy as np
 from cereal import car, messaging
-from opendbc.car import ACCELERATION_DUE_TO_GRAVITY
-from opendbc.car import structs
-from opendbc.car.lateral import get_friction, FRICTION_THRESHOLD
+from iqdbc.car import ACCELERATION_DUE_TO_GRAVITY
+from iqdbc.car import structs
+from iqdbc.car.lateral import get_friction, FRICTION_THRESHOLD
 from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.locationd.torqued import TorqueEstimator, MIN_BUCKET_POINTS, POINTS_PER_BUCKET, STEER_BUCKET_BOUNDS
 

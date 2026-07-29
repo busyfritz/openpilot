@@ -11,7 +11,7 @@ cd $BASEDIR
 # helpful commands:
 # scons -Q --tree=derived
 
-cd $BASEDIR/opendbc_repo/
+cd $BASEDIR/iqdbc_repo/
 scons --clean
 scons --no-cache --random -j$(nproc)
 if ! scons -q; then

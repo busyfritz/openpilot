@@ -11,7 +11,6 @@ import threading
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
-from openpilot.common.swaglog import cloudlog
 
 def unblock_stdout() -> None:
   # get a non-blocking stdout
@@ -103,51 +102,3 @@ def save_bootlog():
   t = threading.Thread(target=fn, args=(tmp, ))
   t.daemon = True
   t.start()
-
-
-# REVERT ME!  ---------------------------------------------------------------
-# One-shot migration carrying values across the sunny -> IQ param key renames.
-# Old keys are no longer registered in params_keys.h, so their values are read
-# straight off disk, copied to the new IQ key, and the stale file removed.
-# Delete this block (and its manager_init() call) once fielded devices have
-# booted past it at least once.
-_RENAMED_PARAMS = {
-  "QuietMode": "IQAlertSilence",
-  "SpeedLimitMode": "IQSpeedAssistMode",
-  "SpeedLimitPolicy": "IQSpeedAssistPolicy",
-  "SpeedLimitOffsetType": "IQSpeedAssistOffsetType",
-  "SpeedLimitValueOffset": "IQSpeedAssistValueOffset",
-  "LaneTurnDesire": "IQLaneTurnDesire",
-  "LaneTurnValue": "IQLaneTurnValue",
-  "BlinkerPauseLateralControl": "IQBlinkerPauseLateral",
-  "BlinkerMinLateralControlSpeed": "IQBlinkerMinLateralSpeed",
-  "DevUIInfo": "IQDevUIInfo",
-}
-
-
-def migrate_renamed_params(params: Params | None = None) -> None:
-  """REVERT ME! carry stored values across the sunny->IQ key renames, then drop the old files.
-
-  Copies at the file level: on-disk param values are raw bytes, so this preserves the exact
-  stored representation and sidesteps put()'s typed-value check for BOOL/INT/FLOAT keys.
-  """
-  p = params if params is not None else Params()
-  for old, new in _RENAMED_PARAMS.items():
-    try:
-      old_path = p.get_param_path(old)
-      if not os.path.isfile(old_path):
-        continue
-      new_path = p.get_param_path(new)
-      if not os.path.exists(new_path):
-        with open(old_path, "rb") as f:
-          value = f.read()
-        tmp = new_path + ".tmp"
-        with open(tmp, "wb") as f:
-          f.write(value)
-          f.flush()
-          os.fsync(f.fileno())
-        os.rename(tmp, new_path)
-      os.remove(old_path)
-    except Exception:
-      cloudlog.exception(f"param rename migration failed for {old} -> {new}")
-# END REVERT ME! ------------------------------------------------------------

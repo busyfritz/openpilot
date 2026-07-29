@@ -5,7 +5,7 @@ import hypothesis.strategies as st
 from parameterized import parameterized
 
 from cereal import log
-from opendbc.car.toyota.values import CAR as TOYOTA
+from iqdbc.car.toyota.values import CAR as TOYOTA
 from openpilot.selfdrive.test.fuzzy_generation import FuzzyGenerator
 import openpilot.selfdrive.test.process_replay.process_replay as pr
 

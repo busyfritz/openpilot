@@ -57,6 +57,8 @@ TurnDirection = custom.IQTurnSignalDirection
 
 IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
 
+NON_BLOCKING_PROCESSES = {'mapd', 'iqmapd', 'navd', 'navrenderd'}
+
 
 def _cleanup_startup_params(CP: car.CarParams, params: Params) -> None:
   if not CP.alphaLongitudinalAvailable or not CP.openpilotLongitudinalControl:
@@ -127,6 +129,7 @@ class SelfdriveD(GapButtonActions):
     self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
     self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
     self.nav_exit_lane_change = self._read_nav_exit_lane_change()
+    self.model_download_pending = self.params.get("ModelManager_DownloadIndex") is not None
 
     car_recognized = self.CP.brand != 'mock'
 
@@ -158,10 +161,10 @@ class SelfdriveD(GapButtonActions):
     self.state_machine = StateMachine()
     self.rk = Ratekeeper(100, print_delay_threshold=None)
 
-    self.ignored_processes = set()
+    self.ignored_processes = set(NON_BLOCKING_PROCESSES)
     nvme_expected = os.path.exists('/dev/nvme0n1') or (not os.path.isfile("/persist/comma/living-in-the-moment"))
     if HARDWARE.get_device_type() == 'tici' and nvme_expected:
-      self.ignored_processes = {'loggerd', }
+      self.ignored_processes.add('loggerd')
 
     # Determine startup event
     is_remote = build_metadata.openpilot.comma_remote or build_metadata.openpilot.iqpilot_remote
@@ -429,6 +432,8 @@ class SelfdriveD(GapButtonActions):
       self.not_running_prev = not_running
     if self.sm.recv_frame['managerState'] and (not_running - self.ignored_processes):
       self.events.add(EventName.processNotRunning)
+      if 'iqmodeld' in not_running and self.model_download_pending:
+        self.events_iq.add(custom.IQOnroadEvent.EventName.modelUpdating)
     else:
       if not SIMULATION and not self.rk.lagging:
         if not self.sm.all_alive(self.camera_packets):
@@ -740,8 +745,18 @@ class SelfdriveD(GapButtonActions):
       self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
       self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
       self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
-      self.personality = self.params.get("LongitudinalPersonality", return_default=True)
+      # Params can be changed while selfdrived is running. Keep the live value in
+      # the same valid enum range enforced during startup; otherwise a stale value
+      # (for example 3) makes the alert callback lookup raise KeyError and kills
+      # selfdrived.
+      self.personality = get_sanitize_int_param(
+        "LongitudinalPersonality",
+        min(log.LongitudinalPersonality.schema.enumerants.values()),
+        max(log.LongitudinalPersonality.schema.enumerants.values()),
+        self.params,
+      )
       self.nav_exit_lane_change = self._read_nav_exit_lane_change()
+      self.model_download_pending = self.params.get("ModelManager_DownloadIndex") is not None
 
       self.aol.read_params()
       time.sleep(0.1)

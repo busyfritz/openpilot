@@ -86,6 +86,9 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
       self._kf_requested = True
     self._request_keyframe(True)
 
+  def request_keyframe(self) -> None:
+    self._mark_keyframe_needed()
+
   def _mark_keyframe_received(self) -> None:
     """This track got its keyframe; only clear the global request once no track needs one."""
     if self._kf_requested:

@@ -5,7 +5,7 @@ Original concept ("Increased Stop Distance") by SpysyWeeb (github.com/SpysyWeeb)
 """
 from types import SimpleNamespace
 
-from opendbc.car.interfaces import ACCEL_MIN
+from iqdbc.car.interfaces import ACCEL_MIN
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.iqpilot.selfdrive.controls.lib.custom_stop_distance import (
   CustomStopDistance,

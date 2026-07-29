@@ -90,6 +90,6 @@ void PandaSafety::setSafetyMode(const std::vector<std::string> &params_string) {
 }
 
 bool PandaSafety::getOffroadMode() {
-  auto offroad_mode = params_.getBool("OffroadMode");
+  auto offroad_mode = params_.getBool("IQAlwaysOffroad");
   return offroad_mode;
 }

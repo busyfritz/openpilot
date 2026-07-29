@@ -11,7 +11,7 @@ COPY pyproject.toml __init__.py setup.sh $WORKDIR
 RUN mkdir -p $WORKDIR/python/ && touch $WORKDIR/__init__.py
 RUN apt-get update && apt-get install -y --no-install-recommends sudo && DEBIAN_FRONTEND=noninteractive $WORKDIR/setup.sh
 
-# second pass for the opendbc moving tag
+# second pass for the iqdbc moving tag
 ARG CACHEBUST=1
 RUN DEBIAN_FRONTEND=noninteractive $WORKDIR/setup.sh
 

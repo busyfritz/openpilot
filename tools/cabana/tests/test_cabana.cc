@@ -142,7 +142,7 @@ CM_ SG_ 162 signal_1 "signal comment with \"escaped quotes\"";
   REQUIRE(msg->sigs[0]->comment == "signal comment with \"escaped quotes\"");
 }
 
-TEST_CASE("parse_opendbc") {
+TEST_CASE("parse_iqdbc") {
   QDir dir(OPENDBC_FILE_PATH);
   QStringList errors;
   for (auto fn : dir.entryList({"*.dbc"}, QDir::Files, QDir::Name)) {

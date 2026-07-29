@@ -2,8 +2,8 @@
 Copyright © IQ.Lvbs, apart of Project Teal Lvbs, All Rights Reserved, licensed under https://konn3kt.com/tos
 """
 from cereal import log
-from opendbc.car import structs
-from opendbc.car.chrysler.values import RAM_DT
+from iqdbc.car import structs
+from iqdbc.car.chrysler.values import RAM_DT
 from openpilot.selfdrive.selfdrived.events import Events
 from openpilot.iqpilot.selfdrive.selfdrived.events import IQEvents
 

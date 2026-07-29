@@ -123,7 +123,7 @@
        <limitY/>
        <curve name="/liveDelay/lateralDelay" color="#1f77b4"/>
        <curve name="/liveDelay/lateralDelayEstimate" color="#d62728"/>
-       <curve name="opendbc default steering lag" color="#1ac938"/>
+       <curve name="iqdbc default steering lag" color="#1ac938"/>
       </plot>
      </DockArea>
      <DockArea name="online estimated steering actuator lag, standard deviation">
@@ -233,7 +233,7 @@
     <v2>/liveParameters/roll</v2>
    </additional_sources>
   </snippet>
-  <snippet name="opendbc default steering lag">
+  <snippet name="iqdbc default steering lag">
    <global></global>
    <function>return value + 0.2</function>
    <linked_source>/carParams/steerActuatorDelay</linked_source>

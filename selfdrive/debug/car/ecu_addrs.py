@@ -2,8 +2,8 @@
 import argparse
 import time
 import cereal.messaging as messaging
-from opendbc.car.carlog import carlog
-from opendbc.car.ecu_addrs import get_all_ecu_addrs
+from iqdbc.car.carlog import carlog
+from iqdbc.car.ecu_addrs import get_all_ecu_addrs
 from openpilot.common.params import Params
 from openpilot.selfdrive.car.card import can_comm_callbacks, obd_callback
 

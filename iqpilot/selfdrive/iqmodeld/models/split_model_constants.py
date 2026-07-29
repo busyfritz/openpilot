@@ -1,3 +1,4 @@
+# openpilot model I/O constants (comma.ai, MIT — see LICENSE)
 import numpy as np
 
 
@@ -14,7 +15,7 @@ class SplitModelConstants:
   LEAD_T_OFFSETS = [0., 2., 4.]
   META_T_IDXS = [2., 4., 6., 8., 10.]
 
-  # model inputs constants
+  # split-model temporal / history run parameters
   MODEL_FREQ = 20
   HISTORY_FREQ = 5
   HISTORY_LEN_SECONDS = 5

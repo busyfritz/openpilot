@@ -7,7 +7,7 @@ import itertools
 import threading
 from typing import Any
 
-from opendbc.car.structs import CarParams
+from iqdbc.car.structs import CarParams
 from panda import Panda
 
 JUNGLE = "JUNGLE" in os.environ

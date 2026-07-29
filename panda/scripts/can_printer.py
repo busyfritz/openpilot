@@ -4,7 +4,7 @@ import time
 from collections import defaultdict
 import binascii
 
-from opendbc.car.structs import CarParams
+from iqdbc.car.structs import CarParams
 from panda import Panda
 
 # fake

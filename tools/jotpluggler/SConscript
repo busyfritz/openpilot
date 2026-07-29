@@ -8,13 +8,13 @@ if os.path.isdir(venv_site_packages) and venv_site_packages not in sys.path:
 
 import imgui
 import libusb
-# IQ.Pilot patch: iqpilot's opendbc fork lacks the upstream `get_generated_dbcs()`
+# IQ.Pilot patch: iqpilot's iqdbc fork lacks the upstream `get_generated_dbcs()`
 # helper. Use the equivalent `create_all(out_dir)` which writes *_generated.dbc
 # files directly to disk.
-from opendbc.dbc.generator.generator import create_all as _opendbc_create_all
-from opendbc.car import Bus
-from opendbc.car.fingerprints import MIGRATION
-from opendbc.car.values import PLATFORMS
+from iqdbc.dbc.generator.generator import create_all as _iqdbc_create_all
+from iqdbc.car import Bus
+from iqdbc.car.fingerprints import MIGRATION
+from iqdbc.car.values import PLATFORMS
 from openpilot.common.basedir import BASEDIR
 
 Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal', 'replay_lib')
@@ -32,10 +32,10 @@ def materialize_generated_dbcs(target, source, env):
   out_dir = os.path.dirname(str(target[0]))
   os.makedirs(out_dir, exist_ok=True)
 
-  # IQ.Pilot patch: opendbc's create_all writes *_generated.dbc files directly
+  # IQ.Pilot patch: iqdbc's create_all writes *_generated.dbc files directly
   # to out_dir (and clears any stale ones first), matching what upstream's
   # get_generated_dbcs()-based loop produced.
-  _opendbc_create_all(out_dir)
+  _iqdbc_create_all(out_dir)
 
   with open(str(target[0]), "w") as f:
     f.write("ok\n")

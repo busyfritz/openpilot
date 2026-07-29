@@ -21,6 +21,10 @@ SLC can now also raise your cruise speed automatically when the speed limit incr
 
 IQ.Pilot now detects upcoming speed cameras, red light cameras, and ALPR/surveillance cameras (including Flock Safety cameras) sourced from OpenStreetMap's and alerts you before you reach them. Each camera type has its own toggle so you can pick what you want to be warned about. Speed cameras can also trigger a speed reduction to the limit when detected if enabled. Camera data is sourced from OSM and is updated periodically.
 
+**Direct Flock / ALPR Camera Detection (Bluetooth & WiFi)**
+
+Beyond map data, IQ.Pilot can now spot Flock Safety and similar ALPR cameras directly over the air by their Bluetooth and WiFi signatures as you approach them. Because it's sensing the actual hardware rather than relying on a map, this works anywhere, including fully offline and even for cameras that haven't been mapped yet, so you get a heads-up the moment one is nearby. When IQ.Pilot picks up a camera directly, that live detection takes priority over map data, so you see a single clear "Flock Camera Detected" alert instead of a duplicate. It shares the same Flock camera alert toggle, runs quietly in the background only when that's enabled, and is built to stay out of the way of your Bluetooth (phone link, game controllers) and WiFi connections.
+
 **IQ.Dynamic and Driving Behavior**
 
 In IQ.Dynamic blended mode, when IQ.Pilot sees a stop light ahead, and the model agrees you need to stop, and there's no lead car to track, it will now commit (force) to stopping on its own, no lead car required. Gas pedal overrides it instantly. The stop prediction horizon is adjustable in IQ.Dynamic settings. Behavior for curves, low-speed driving, stopped leads, speed-limit fallbacks, and vision-based stops is now configurable. On-device IQ.Dynamic tuning is accessible by double-tapping IQ.Dynamic in longitudinal mode selection.

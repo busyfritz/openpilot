@@ -5,11 +5,11 @@ from parameterized import parameterized
 from types import SimpleNamespace
 
 from cereal import car, custom
-from opendbc.car import DT_CTRL
-from opendbc.car.structs import CarParams
-from opendbc.car.tests.test_car_interfaces import get_fuzzy_car_interface
-from opendbc.car.mock.values import CAR as MOCK
-from opendbc.car.values import PLATFORMS
+from iqdbc.car import DT_CTRL
+from iqdbc.car.structs import CarParams
+from iqdbc.car.tests.test_car_interfaces import get_fuzzy_car_interface
+from iqdbc.car.mock.values import CAR as MOCK
+from iqdbc.car.values import PLATFORMS
 from openpilot.selfdrive.car.card import run_optional_pre_init
 from openpilot.selfdrive.car.helpers import convert_iq_car_control, convert_iq_car_control_compact
 from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle
@@ -39,7 +39,7 @@ class TestCarInterfaces:
       car_interface.CP.openpilotLongitudinalControl = False
     car_params = car_interface.CP.as_reader()
     car_params_iq = car_interface.CP_IQ
-    iqpilot_interfaces.setup_interfaces(car_interface)
+    iqpilot_interfaces.apply_iq_car_config(car_interface)
 
     cc_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
     cc_sp_msg = FuzzyGenerator.get_random_msg(data.draw, custom.IQCarControl, real_floats=True)

@@ -4,7 +4,7 @@ Copyright © IQ.Lvbs, apart of Project Teal Lvbs, All Rights Reserved, licensed 
 import pyray as rl
 
 from openpilot.selfdrive.ui.mici.onroad.hud_renderer import HudRenderer
-from openpilot.iqpilot.ui.onroad.hud_overlays import BlindSpotIndicators
+from openpilot.iqpilot.ui.onroad.hud_overlays import IQBlindSpotOverlay
 
 
 class IQMiciHudRenderer(HudRenderer):
@@ -16,7 +16,7 @@ class IQMiciHudRenderer(HudRenderer):
 
   def __init__(self):
     super().__init__()
-    self._overlays = [BlindSpotIndicators()]
+    self._overlays = [IQBlindSpotOverlay()]
 
   def _update_state(self) -> None:
     super()._update_state()

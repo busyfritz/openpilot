@@ -2,8 +2,8 @@
 import argparse
 import time
 import cereal.messaging as messaging
-from opendbc.car.carlog import carlog
-from opendbc.car.vin import get_vin
+from iqdbc.car.carlog import carlog
+from iqdbc.car.vin import get_vin
 from openpilot.selfdrive.car.card import can_comm_callbacks
 
 if __name__ == "__main__":

@@ -3,7 +3,7 @@ Copyright © IQ.Lvbs, apart of Project Teal Lvbs, All Rights Reserved, licensed 
 
 Original concept and implementation by SpysyWeeb (github.com/SpysyWeeb)
 """
-from opendbc.car.interfaces import ACCEL_MIN
+from iqdbc.car.interfaces import ACCEL_MIN
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_CTRL
 

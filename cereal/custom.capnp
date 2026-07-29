@@ -242,8 +242,8 @@ struct IQPlan @0xda401323ae805f2b {
   }
 
   struct E2eAlerts {
-    greenLightAlert @0 :Bool;
-    leadDepartAlert @1 :Bool;
+    pathOpen @0 :Bool;
+    leadPullaway @1 :Bool;
   }
 }
 
@@ -315,11 +315,13 @@ struct IQOnroadEvent @0xf4621d3ee9233bc9 {
 
     # construction zone assist
     constructionZoneDetected @30;
+
+    # model management
+    modelUpdating @31;
   }
 }
 
 struct IQCarParams @0xd4189b5c8aca9f78 {
-  # Data fields first (packed into the struct data section), pointer field last.
   # Ordinals are IQ-native; all consumers access by name. Live copies self-heal
   # via CLEAR_ON_MANAGER_START on the "IQCarParams" param; the persistent cache
   # is versioned separately (see IQCarParamsPersistentV2).
@@ -329,6 +331,8 @@ struct IQCarParams @0xd4189b5c8aca9f78 {
   enableGasInterceptor @3 :Bool;
 
   iqLateralNet @4 :LateralNet;
+  longitudinalStoppingSpeedOverride @5 :Float32;  # m/s; zero keeps the upstream default
+  stoppingDecelRateOverride @6 :Float32;          # m/s^3; zero keeps the upstream default
 
   struct LateralNet {
     fuzzyFingerprint @0 :Bool;
@@ -734,6 +738,7 @@ struct IQVehicleTracks @0xb877ef4b20a4ae22 {
   frameHeight @2 :UInt16;
   processingMs @3 :Float32;
   tracks @4 :List(Track);
+  wide @5 :Bool;
 
   struct Track {
     # box corners normalized [0,1] in the road-camera frame

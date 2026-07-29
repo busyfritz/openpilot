@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import time
 import struct
-from opendbc.car.structs import CarParams
+from iqdbc.car.structs import CarParams
 from panda import Panda
 from hexdump import hexdump
-from opendbc.car.isotp import isotp_send, isotp_recv
+from iqdbc.car.isotp import isotp_send, isotp_recv
 
 # 0x7e0 = Toyota
 # 0x18DB33F1 for Honda?

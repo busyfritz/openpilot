@@ -4,7 +4,7 @@ import numpy as np
 from cereal import car
 from openpilot.common.constants import CV
 from cereal import car, custom
-from opendbc.car import structs
+from iqdbc.car import structs
 from openpilot.common.params import Params
 from openpilot.iqpilot.selfdrive.car.long_increments import LongIncrementConfig, read_long_increment_config, resolve_button_step
 
@@ -44,15 +44,16 @@ def get_minimum_set_speed_kph(_is_metric: bool) -> float:
 
 
 def update_manual_button_timers(CS: car.CarState, button_timers: dict[car.CarState.ButtonEvent.Type, int]) -> None:
-  # increment timer for buttons still pressed
-  for k in button_timers:
-    if button_timers[k] > 0:
-      button_timers[k] += 1
+  # age any button that's currently held (nonzero timer)
+  for btn, held_frames in button_timers.items():
+    if held_frames > 0:
+      button_timers[btn] = held_frames + 1
 
-  for b in CS.buttonEvents:
-    if b.type.raw in button_timers:
-      # Start/end timer and store current state on change of button pressed
-      button_timers[b.type.raw] = 1 if b.pressed else 0
+  # a press/release edge (re)starts the timer at 1 or clears it to 0
+  for event in CS.buttonEvents:
+    raw = event.type.raw
+    if raw in button_timers:
+      button_timers[raw] = 1 if event.pressed else 0
 
 
 class VCruiseHelperIQ:
@@ -136,20 +137,21 @@ class VCruiseHelperIQ:
     self.v_cruise_min = get_minimum_set_speed_kph(is_metric)
 
   def update_enabled_state(self, CS: car.CarState, enabled: bool) -> bool:
-    # special enabled state for non pcmCruiseSpeed, unchanged for non pcmCruise
-    if not self.CP_IQ.pcmCruiseSpeed:
-      update_manual_button_timers(CS, self.enable_button_timers)
-      button_pressed = any(self.enable_button_timers[k] > 0 for k in self.enable_button_timers)
+    # pcmCruiseSpeed cars keep the stock enabled flag; others gate engagement on button release
+    if self.CP_IQ.pcmCruiseSpeed:
+      return enabled
 
-      if enabled and not self.enabled_prev:
-        self.enabled_prev = not button_pressed
-        enabled = False
-      elif not enabled:
-        self.enabled_prev = enabled
+    update_manual_button_timers(CS, self.enable_button_timers)
+    button_pressed = any(t > 0 for t in self.enable_button_timers.values())
 
-      return enabled and self.enabled_prev
+    if enabled and not self.enabled_prev:
+      # first engage frame while the button is still down: hold off until it's let go
+      self.enabled_prev = not button_pressed
+      return False
+    if not enabled:
+      self.enabled_prev = False
 
-    return enabled
+    return enabled and self.enabled_prev
 
   def update_speed_limit_assist(self, is_metric, LP_IQ: custom.IQPlan) -> None:
     resolver = LP_IQ.speedLimit.resolver
@@ -162,7 +164,9 @@ class VCruiseHelperIQ:
 
   @property
   def update_speed_limit_final_last_changed(self) -> bool:
-    return self.has_speed_limit and bool(self.speed_limit_final_last_kph != self.prev_speed_limit_final_last_kph)
+    if not self.has_speed_limit:
+      return False
+    return self.speed_limit_final_last_kph != self.prev_speed_limit_final_last_kph
 
   def update_speed_limit_assist_v_cruise_non_pcm(self) -> None:
     if self.set_speed_to_limit and \

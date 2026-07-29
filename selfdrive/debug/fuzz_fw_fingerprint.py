@@ -4,11 +4,11 @@ from collections import defaultdict
 
 from tqdm import tqdm
 
-from opendbc.car.fw_versions import match_fw_to_car_fuzzy
-from opendbc.car.toyota.values import FW_VERSIONS as TOYOTA_FW_VERSIONS
-from opendbc.car.honda.values import FW_VERSIONS as HONDA_FW_VERSIONS
-from opendbc.car.hyundai.values import FW_VERSIONS as HYUNDAI_FW_VERSIONS
-from opendbc.car.volkswagen.values import FW_VERSIONS as VW_FW_VERSIONS
+from iqdbc.car.fw_versions import match_fw_to_car_fuzzy
+from iqdbc.car.toyota.values import FW_VERSIONS as TOYOTA_FW_VERSIONS
+from iqdbc.car.honda.values import FW_VERSIONS as HONDA_FW_VERSIONS
+from iqdbc.car.hyundai.values import FW_VERSIONS as HYUNDAI_FW_VERSIONS
+from iqdbc.car.volkswagen.values import FW_VERSIONS as VW_FW_VERSIONS
 
 
 FWS = {}

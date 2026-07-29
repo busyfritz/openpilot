@@ -8,7 +8,7 @@ import pyray as rl
 from openpilot.common.params import Params
 from openpilot.selfdrive.ui import UI_BORDER_SIZE
 from openpilot.selfdrive.ui.onroad.driver_state import DriverStateRenderer, BTN_SIZE, ARC_LENGTH
-from openpilot.iqpilot.ui.onroad.hud_overlays import DeveloperUiRenderer
+from openpilot.iqpilot.ui.onroad.hud_overlays import IQDevMetricsOverlay
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 
@@ -50,7 +50,7 @@ class DriverStateRendererIQ(DriverStateRenderer):
     self._toast_color: rl.Color = rl.WHITE
     self._font = gui_app.font(FontWeight.SEMI_BOLD)
 
-    self.dev_ui_offset = DeveloperUiRenderer.get_bottom_dev_ui_offset()
+    self.dev_ui_offset = IQDevMetricsOverlay.get_bottom_dev_ui_offset()
     self._dm_background = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_background.png", BTN_SIZE, BTN_SIZE)
     self._dm_person = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_person.png", 118, 118)
     self._dm_cone = gui_app.texture("icons_mici/onroad/driver_monitoring/dm_cone.png", 118, 118)

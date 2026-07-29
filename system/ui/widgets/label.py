@@ -406,7 +406,8 @@ class Label(Widget):
         line_pos.x += width_before.x
 
         tex = emoji_tex(emoji)
-        rl.draw_texture_ex(tex, line_pos, 0.0, self._font_size / tex.height * FONT_SCALE, self._text_color)
+        if tex is not None:
+          rl.draw_texture_ex(tex, line_pos, 0.0, self._font_size / tex.height * FONT_SCALE, self._text_color)
         line_pos.x += self._font_size * FONT_SCALE
         prev_index = end
       rl.draw_text_ex(self._font, text[prev_index:], line_pos, self._font_size, 0, self._text_color)
@@ -849,8 +850,9 @@ class UnifiedLabel(Widget):
 
       # Draw emoji
       tex = emoji_tex(emoji)
-      emoji_scale = self._font_size / tex.height * FONT_SCALE
-      rl.draw_texture_ex(tex, line_pos, 0.0, emoji_scale, self._text_color)
+      if tex is not None:
+        emoji_scale = self._font_size / tex.height * FONT_SCALE
+        rl.draw_texture_ex(tex, line_pos, 0.0, emoji_scale, self._text_color)
       # Emoji width is font_size * FONT_SCALE (as per measure_text_cached)
       line_pos.x += self._font_size * FONT_SCALE
       prev_index = end

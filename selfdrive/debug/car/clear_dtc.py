@@ -2,9 +2,9 @@
 import sys
 import argparse
 from subprocess import check_output, CalledProcessError
-from opendbc.car.carlog import carlog
-from opendbc.car.uds import UdsClient, MessageTimeoutError, SESSION_TYPE, DTC_GROUP_TYPE
-from opendbc.car.structs import CarParams
+from iqdbc.car.carlog import carlog
+from iqdbc.car.uds import UdsClient, MessageTimeoutError, SESSION_TYPE, DTC_GROUP_TYPE
+from iqdbc.car.structs import CarParams
 from panda import Panda
 
 parser = argparse.ArgumentParser(description="clear DTC status")

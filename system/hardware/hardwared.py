@@ -21,7 +21,6 @@ from openpilot.common.realtime import DT_HW
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.system.hardware import HARDWARE, TICI, AGNOS
 from openpilot.system.loggerd.config import get_available_percent
-from openpilot.system.statsd import statlog
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware.power_monitoring import PowerMonitoring, VBATT_LOW_POWER_EXIT
 from openpilot.system.hardware.fan_controller import FanController
@@ -35,6 +34,10 @@ TEMP_TAU = 5.   # 5s time constant
 DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect so you get an alert
 PANDA_STATES_TIMEOUT = round(1000 / SERVICE_LIST['pandaStates'].frequency * 1.5)  # 1.5x the expected pandaState frequency
 ONROAD_CYCLE_TIME = 1  # seconds to wait offroad after requesting an onroad cycle
+CAN_STARTUP_RECOVERY_DELAY = 3.  # require a persistent CAN timeout before cycling onroad processes
+CAN_STARTUP_RECOVERY_WINDOW = 30.  # only recover shortly after ignition turns on
+CAN_STARTUP_RECOVERY_COOLDOWN = 5.  # allow the restarted car stack time to initialize
+CAN_STARTUP_RECOVERY_MAX_ATTEMPTS = 2
 
 ThermalBand = namedtuple("ThermalBand", ['min_temp', 'max_temp'])
 HardwareState = namedtuple("HardwareState", ['network_type', 'network_info', 'network_strength', 'network_stats',
@@ -54,6 +57,54 @@ OFFROAD_DANGER_TEMP = 75
 
 prev_offroad_states: dict[str, tuple[bool, str | None]] = {}
 ALLOWED_TICI_BRANCHES = {"release-new", "release-tici", "master-mici", "beta", "beta-pq", "beta-pq-busyfritz", "release-prebuilt"}
+
+
+class CanStartupRecovery:
+  """Bounded recovery for a car stack that starts without a usable CAN stream."""
+
+  def __init__(self) -> None:
+    self.ignition_on_ts: float | None = None
+    self.timeout_started_ts: float | None = None
+    self.last_attempt_ts: float | None = None
+    self.attempts = 0
+
+  def update(self, now: float, ignition: bool, started: bool, engaged: bool,
+             car_state_alive: bool, can_timeout: bool, v_ego: float) -> bool:
+    if not ignition:
+      self.ignition_on_ts = None
+      self.timeout_started_ts = None
+      self.last_attempt_ts = None
+      self.attempts = 0
+      return False
+
+    if self.ignition_on_ts is None:
+      self.ignition_on_ts = now
+
+    eligible = (
+      started
+      and not engaged
+      and car_state_alive
+      and can_timeout
+      and abs(v_ego) < 0.1
+      and (now - self.ignition_on_ts) <= CAN_STARTUP_RECOVERY_WINDOW
+      and self.attempts < CAN_STARTUP_RECOVERY_MAX_ATTEMPTS
+      and (self.last_attempt_ts is None or (now - self.last_attempt_ts) >= CAN_STARTUP_RECOVERY_COOLDOWN)
+    )
+    if not eligible:
+      self.timeout_started_ts = None
+      return False
+
+    if self.timeout_started_ts is None:
+      self.timeout_started_ts = now
+      return False
+
+    if (now - self.timeout_started_ts) < CAN_STARTUP_RECOVERY_DELAY:
+      return False
+
+    self.attempts += 1
+    self.last_attempt_ts = now
+    self.timeout_started_ts = None
+    return True
 
 
 def get_top_memory_processes(limit: int = 5) -> list[dict[str, object]]:
@@ -153,6 +204,7 @@ def hw_state_thread(end_event, hw_queue):
   modem_configured = False
   modem_missing_count = 0
   modem_restart_count = 0
+  sim_detection_recovered = False
 
   while not end_event.is_set():
     # these are expensive calls. update every 10s
@@ -203,6 +255,10 @@ def hw_state_thread(end_event, hw_queue):
           HARDWARE.configure_modem()
           modem_configured = True
 
+        if modem_configured and not sim_detection_recovered and HARDWARE.recover_sim_detection():
+          cloudlog.event("sim missing with hot-swap detect armed, rebooting modem with detect disabled", error=True)
+          sim_detection_recovered = True
+
         prev_hw_state = hw_state
       except Exception:
         cloudlog.exception("Error getting hardware state")
@@ -213,7 +269,7 @@ def hw_state_thread(end_event, hw_queue):
 
 def hardware_thread(end_event, hw_queue) -> None:
   pm = messaging.PubMaster(['deviceState', 'iqPerfTrace'])
-  sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "selfdriveState", "pandaStates"], poll="pandaStates")
+  sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "selfdriveState", "pandaStates", "carState"], poll="pandaStates")
   perf = PerfTraceEmitter("hardwared", pubmaster=pm)
 
   count = 0
@@ -251,6 +307,7 @@ def hardware_thread(end_event, hw_queue) -> None:
   low_power = False
   low_power_prev = False
   offroad_cycle_count = 0
+  can_startup_recovery = CanStartupRecovery()
 
   params = Params()
   power_monitor = PowerMonitoring()
@@ -275,6 +332,19 @@ def hardware_thread(end_event, hw_queue) -> None:
     if params.get_bool("OnroadCycleRequested"):
       params.put_bool("OnroadCycleRequested", False)
       offroad_cycle_count = sm.frame
+
+    car_state = sm['carState']
+    if can_startup_recovery.update(
+      time.monotonic(),
+      ignition=onroad_conditions["ignition"],
+      started=started_ts is not None,
+      engaged=sm['selfdriveState'].enabled,
+      car_state_alive=sm.alive['carState'],
+      can_timeout=car_state.canTimeout,
+      v_ego=car_state.vEgo,
+    ):
+      offroad_cycle_count = sm.frame
+      cloudlog.event("automatic CAN startup recovery", attempt=can_startup_recovery.attempts, error=True)
     onroad_conditions["not_onroad_cycle"] = (sm.frame - offroad_cycle_count) >= ONROAD_CYCLE_TIME * SERVICE_LIST['pandaStates'].frequency
 
     if sm.updated['pandaStates'] and len(pandaStates) > 0:
@@ -397,7 +467,7 @@ def hardware_thread(end_event, hw_queue) -> None:
     startup_conditions["device_booted"] = startup_conditions.get("device_booted", False) or HARDWARE.booted()
 
     # user-forced status (Always Offroad can be temporarily overridden)
-    offroad_mode = params.get_bool("OffroadMode")
+    offroad_mode = params.get_bool("IQAlwaysOffroad")
     force_onroad_until = params.get("ForceOnroadUntil", return_default=True)
     now = int(time.time())
     force_onroad_active = offroad_mode and force_onroad_until > now
@@ -479,22 +549,22 @@ def hardware_thread(end_event, hw_queue) -> None:
     msg.deviceState.offroadPowerUsageUwh = power_monitor.get_power_used()
     msg.deviceState.carBatteryCapacityUwh = max(0, power_monitor.get_car_battery_capacity())
     current_power_draw = HARDWARE.get_current_power_draw()
-    statlog.sample("power_draw", current_power_draw)
     msg.deviceState.powerDrawW = current_power_draw
 
     som_power_draw = HARDWARE.get_som_power_draw()
-    statlog.sample("som_power_draw", som_power_draw)
     msg.deviceState.somPowerDrawW = som_power_draw
 
-    # FastSleep deep standby: shed heavy processes at low battery instead of shutting down,
-    # recover on ignition or once the alternator is charging
+    # FastSleep deep standby: shed heavy processes once parked with the screen idled off
+    # (or at low battery) instead of shutting down, recover on ignition or once the
+    # alternator is charging
     fast_sleep = params.get_bool("FastSleep")
     if fast_sleep and not tesla_no_sleep:
       if low_power:
         if onroad_conditions["ignition"] or power_monitor.car_voltage_mV >= (VBATT_LOW_POWER_EXIT * 1e3):
           low_power = False
       else:
-        low_power = power_monitor.should_enter_low_power(onroad_conditions["ignition"], in_car, off_ts)
+        screen_off = msg.deviceState.screenBrightnessPercent < 1e-3
+        low_power = power_monitor.should_enter_low_power(onroad_conditions["ignition"], in_car, off_ts, screen_off)
     else:
       low_power = False
 
@@ -523,23 +593,6 @@ def hardware_thread(end_event, hw_queue) -> None:
     msg.deviceState.thermalStatus = thermal_status
     pm.send("deviceState", msg)
 
-    # Log to statsd
-    statlog.gauge("free_space_percent", msg.deviceState.freeSpacePercent)
-    statlog.gauge("gpu_usage_percent", msg.deviceState.gpuUsagePercent)
-    statlog.gauge("memory_usage_percent", msg.deviceState.memoryUsagePercent)
-    for i, usage in enumerate(msg.deviceState.cpuUsagePercent):
-      statlog.gauge(f"cpu{i}_usage_percent", usage)
-    for i, temp in enumerate(msg.deviceState.cpuTempC):
-      statlog.gauge(f"cpu{i}_temperature", temp)
-    for i, temp in enumerate(msg.deviceState.gpuTempC):
-      statlog.gauge(f"gpu{i}_temperature", temp)
-    statlog.gauge("memory_temperature", msg.deviceState.memoryTempC)
-    for i, temp in enumerate(msg.deviceState.pmicTempC):
-      statlog.gauge(f"pmic{i}_temperature", temp)
-    for i, temp in enumerate(last_hw_state.modem_temps):
-      statlog.gauge(f"modem_temperature{i}", temp)
-    statlog.gauge("fan_speed_percent_desired", msg.deviceState.fanSpeedPercentDesired)
-    statlog.gauge("screen_brightness_percent", msg.deviceState.screenBrightnessPercent)
 
     # report to server once every 10 minutes
     rising_edge_started = should_start and not should_start_prev

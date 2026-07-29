@@ -1,7 +1,7 @@
 import time
 import pytest
 
-from opendbc.car.structs import CarParams
+from iqdbc.car.structs import CarParams
 from panda import Panda, PandaJungle
 
 PANDA_SERIAL = "300008001851333037333932"

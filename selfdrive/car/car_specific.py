@@ -1,8 +1,8 @@
 from cereal import car, log
-from opendbc.car import DT_CTRL, structs
-from opendbc.car.car_helpers import interfaces
-from opendbc.car.interfaces import MAX_CTRL_SPEED
-from opendbc.car.toyota.values import ToyotaFlags
+from iqdbc.car import DT_CTRL, structs
+from iqdbc.car.car_helpers import interfaces
+from iqdbc.car.interfaces import MAX_CTRL_SPEED
+from iqdbc.car.toyota.values import ToyotaFlags
 
 from openpilot.selfdrive.selfdrived.events import Events
 

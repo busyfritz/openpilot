@@ -1,5 +1,5 @@
 from cereal import custom
-from opendbc.car import structs
+from iqdbc.car import structs
 
 from openpilot.iqpilot.selfdrive.car.interfaces import _cleanup_unsupported_params
 

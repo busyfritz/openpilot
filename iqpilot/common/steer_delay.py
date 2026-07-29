@@ -3,14 +3,14 @@ Copyright © IQ.Lvbs, apart of Project Teal Lvbs, All Rights Reserved, licensed 
 
 Chooses which steer-actuator delay the lateral controllers run with: the value the
 live estimator learned, or the driver's fixed software delay — gated by the
-"LagdToggle" param. The pick is mirrored into "LagdValueCache" so consumers that do
+"IQLiveSteerDelay" param. The pick is mirrored into "IQSteerDelayCache" so consumers that do
 not subscribe to liveDelay can still read the current value.
 """
 from openpilot.common.params import Params
 
-_ENABLE_KEY = "LagdToggle"
-_FIXED_KEY = "LagdToggleDelay"
-_CACHE_KEY = "LagdValueCache"
+_ENABLE_KEY = "IQLiveSteerDelay"
+_FIXED_KEY = "IQSoftwareSteerDelay"
+_CACHE_KEY = "IQSteerDelayCache"
 
 
 def resolve_steer_delay(params, stock_delay):
@@ -27,7 +27,7 @@ def cached_steer_delay():
 
 
 class SteerDelayPublisher:
-  """Refreshes LagdValueCache every lag message: the learned live delay when the
+  """Refreshes IQSteerDelayCache every lag message: the learned live delay when the
   toggle is on, else the actuator delay plus the driver's fixed software offset."""
 
   def __init__(self, car_params):

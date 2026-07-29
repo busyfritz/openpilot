@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 import random
-from opendbc.car.structs import CarParams
+from iqdbc.car.structs import CarParams
 from panda import PandaJungle
 
 def get_test_string():

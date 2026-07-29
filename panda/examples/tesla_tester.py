@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import binascii
-from opendbc.car.structs import CarParams
+from iqdbc.car.structs import CarParams
 from panda import Panda
 
 def tesla_tester():

@@ -1,6 +1,6 @@
 import time
 
-from opendbc.car.structs import CarParams
+from iqdbc.car.structs import CarParams
 
 
 def test_safety_nooutput(p):

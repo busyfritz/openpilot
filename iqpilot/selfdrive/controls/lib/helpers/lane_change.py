@@ -50,7 +50,7 @@ class LaneSwapEngine:
       "sec": 0.0,
       "tick": 0,
       "gate": 0.0,
-      "preset": self._kv.get("AutoLaneChangeTimer", return_default=True),
+      "preset": self._kv.get("IQLaneChangeTimer", return_default=True),
       "bsm_hold": False,
       "braked": False,
       "ready": False,
@@ -59,8 +59,8 @@ class LaneSwapEngine:
     self.reload_setup()
 
   def _pull_setup(self) -> None:
-    self._mem["bsm_hold"] = self._kv.get_bool("AutoLaneChangeBsmDelay")
-    self._mem["preset"] = self._kv.get("AutoLaneChangeTimer", return_default=True)
+    self._mem["bsm_hold"] = self._kv.get_bool("IQLaneChangeBsmDelay")
+    self._mem["preset"] = self._kv.get("IQLaneChangeTimer", return_default=True)
 
   def _idle_phase(self) -> bool:
     return (

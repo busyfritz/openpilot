@@ -79,7 +79,7 @@ def navrenderd_onroad(started: bool, params: Params, CP: car.CarParams) -> bool:
 
 def iqmapd_needed(params: Params) -> bool:
   return (
-    params.get_bool("RoadNameToggle")
+    params.get_bool("IQRoadNameOverlay")
     or params.get_bool("ShowSpeedLimits")
     or params.get_bool("SpeedLimitController")
     or params.get_bool("EnableSpeedLimitControl")
@@ -174,7 +174,6 @@ procs = [
   PythonProcess("tombstoned", "system.tombstoned", always_run, enabled=not PC),
   PythonProcess("updated", "system.updated.updated", and_(only_offroad, not_low_power), enabled=not PC),
   BundleProcess("iquploaderd", "iqpilot_hephaestusd_private", "iqpilot_private.konn3kt.uploaderd.iquploaderd", and_(iquploaderd_ready, not_low_power), restart_if_crash=True),
-  PythonProcess("statsd", "system.statsd", always_run),
   PythonProcess("feedbackd", "selfdrive.ui.feedback.feedbackd", and_(only_onroad, not_lat_maneuver)),
 
   # debug procs
@@ -201,7 +200,7 @@ procs += [
   BundleProcess("iqvd", "iqpilot_iqvd_private", "iqpilot_private.iqvd.iqvd", iqvd_onroad, restart_if_crash=True),
 
   # mapd
-  NativeProcess("mapd", "third_party/mapd_pfeiferj", ["./mapd"], mapd_onroad),
+  NativeProcess("mapd", "third_party/mapd_pfeiferj", ["./mapd"], mapd_onroad, restart_if_crash=True),
   PythonProcess("mapd_manager", "iqpilot.iq_maps.orchestrator", and_(only_offroad, not_low_power)),
 
   # locationd

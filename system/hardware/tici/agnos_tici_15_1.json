@@ -67,17 +67,17 @@
   },
   {
     "name": "system",
-    "url": "https://sdn.konn3kt.com/agnos/16-iqlvbs/system-036bb0bcf945115c6488efadcdb56a42192201290a5fe4572ac7b46549146c79.img.xz",
-    "hash": "a0bf6d22e1134fc6c47158d63901c06324ea3b3808ed2fec35801a888cf3d526",
-    "hash_raw": "036bb0bcf945115c6488efadcdb56a42192201290a5fe4572ac7b46549146c79",
+    "url": "https://sdn.konn3kt.com/agnos/16-iqlvbs/system-03397de3da2e9a6d2808b95b72c945b3af71ab79f7f0298624aed62b8749fc5a.img.xz",
+    "hash": "0c9e7dee6c7365600c77b33c4996456459d04aad005e3e41bf6ee2e8af74ceb9",
+    "hash_raw": "03397de3da2e9a6d2808b95b72c945b3af71ab79f7f0298624aed62b8749fc5a",
     "size": 6291456000,
     "sparse": true,
     "full_check": false,
     "has_ab": true,
-    "ondevice_hash": "9a08b97618dceceed48205ec674330bb97c7f76487a6cca2f68288aaa42aaf8e",
+    "ondevice_hash": "1ee589d3d728a03561718383bf640171f1aef048573e46fe17239617c7c19fff",
     "alt": {
-      "hash": "036bb0bcf945115c6488efadcdb56a42192201290a5fe4572ac7b46549146c79",
-      "url": "https://sdn.konn3kt.com/agnos/16-iqlvbs/system-036bb0bcf945115c6488efadcdb56a42192201290a5fe4572ac7b46549146c79.img",
+      "hash": "03397de3da2e9a6d2808b95b72c945b3af71ab79f7f0298624aed62b8749fc5a",
+      "url": "https://sdn.konn3kt.com/agnos/16-iqlvbs/system-03397de3da2e9a6d2808b95b72c945b3af71ab79f7f0298624aed62b8749fc5a.img",
       "size": 6291456000
     }
   }

@@ -12,7 +12,7 @@ from openpilot.system.ui.widgets.option_dialog import MultiOptionDialog
 from openpilot.system.ui.widgets.scroller_tici import Scroller
 
 if gui_app.iqpilot_ui():
-  from openpilot.system.ui.iqpilot.widgets.list_view import button_item
+  from openpilot.system.ui.iqwidgets.widgets.list_view import button_item
 
 # TODO: remove this. updater fails to respond on startup if time is not correct
 UPDATED_TIMEOUT = 10  # seconds to wait for updated to respond
@@ -237,7 +237,7 @@ class SoftwareLayout(Widget):
   def _on_auth_branch(self):
     # Collect username then token; store encrypted and signal the updater to
     # re-check (refreshing the available-branch list for private repos).
-    from openpilot.system.ui.iqpilot.widgets.list_view import open_text_prompt
+    from openpilot.system.ui.iqwidgets.widgets.list_view import open_text_prompt
     from openpilot.common import git_creds
 
     creds = git_creds.get_credentials()

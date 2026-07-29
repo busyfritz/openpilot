@@ -12,6 +12,11 @@ MAX_VEL_ERR = 5.0  # m/s
 MAX_LATERAL_JERK = 5.0  # m/s^3
 MAX_LATERAL_ACCEL_NO_ROLL = 3.0  # m/s^2
 MAX_LATERAL_ACCEL_NO_ROLL_OVERRIDE = 5.0  # m/s^2
+DEFAULT_STOPPING_SPEED = 0.25  # m/s
+
+
+def should_stop(v_ego: float, a_target: float, stopping_speed: float = DEFAULT_STOPPING_SPEED) -> bool:
+  return bool(v_ego < stopping_speed and a_target < 0.1)
 
 
 def clamp(val, min_val, max_val):
@@ -52,7 +57,7 @@ def clip_curvature(v_ego, prev_curvature, new_curvature, roll, override=False) -
   return float(new_curvature), limited_accel or limited_max_curv
 
 
-def get_accel_from_plan(speeds, accels, t_idxs, action_t=DT_MDL, vEgoStopping=0.3):
+def get_accel_from_plan(speeds, accels, t_idxs, action_t=DT_MDL, stopping_speed=DEFAULT_STOPPING_SPEED):
   if len(speeds) == len(t_idxs):
     v_now = speeds[0]
     a_now = accels[0]
@@ -62,8 +67,7 @@ def get_accel_from_plan(speeds, accels, t_idxs, action_t=DT_MDL, vEgoStopping=0.
     v_now = 0.0
     v_target = 0.0
     a_target = 0.0
-  should_stop = (v_now < vEgoStopping and a_target < 0.1)
-  return a_target, should_stop
+  return a_target, should_stop(v_now, a_target, stopping_speed)
 
 def curv_from_psis(psi_target, psi_rate, vego, action_t):
   vego = np.clip(vego, MIN_SPEED, np.inf)

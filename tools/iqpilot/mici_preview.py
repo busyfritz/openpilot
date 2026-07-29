@@ -141,16 +141,16 @@ def _patch_mock_state():
   mp.put("AolMainCruiseAllowed",      True)
   mp.put("AolUnifiedEngagementMode",  False)
   mp.put("NeuralNetworkFeedForward",  False)
-  mp.put("AutoLaneChangeTimer",       0)      # nudge
-  mp.put("AutoLaneChangeBsmDelay",    False)
+  mp.put("IQLaneChangeTimer",       0)      # nudge
+  mp.put("IQLaneChangeBsmDelay",    False)
 
   # ── Visuals (correct param keys matching visuals.py) ─────────────────────
-  mp.put("BlindSpot",             True)
-  mp.put("TorqueBar",             True)
-  mp.put("RoadNameToggle",        True)
-  mp.put("ShowTurnSignals",       True)
-  mp.put("RocketFuel",            False)
-  mp.put("ChevronInfo",           0)          # 0=off
+  mp.put("IQBlindSpotAlerts",             True)
+  mp.put("IQSteerEffortArc",             True)
+  mp.put("IQRoadNameOverlay",        True)
+  mp.put("IQBlinkerIndicators",       True)
+  mp.put("IQAccelMeter",            False)
+  mp.put("IQLeadReadouts",           0)          # 0=off
   mp.put("IQDevUIInfo",             0)          # 0=off
   mp.put("AlphaLongitudinalEnabled", False)   # real param; gates ChevronInfo
 
@@ -165,7 +165,7 @@ def _patch_mock_state():
   mp.put("Version",         "IQ.Pilot 0.9.5-mici")
 
   # ── Models ────────────────────────────────────────────────────────────────
-  mp.put("LagdToggle",      False)
+  mp.put("IQLiveSteerDelay",      False)
   mp.put("IQLaneTurnDesire",  False)
   mp.put("IQLaneTurnValue",   "19.0")
 

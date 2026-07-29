@@ -99,6 +99,32 @@ class ForgetButton(Widget):
     rl.draw_texture_ex(self._trash_txt, (trash_x, trash_y), 0, 1.0, rl.WHITE)
 
 
+class DisconnectButton(Widget):
+  MARGIN = 12
+  RADIUS = 42
+  # the only round button art is the destructive red one, and dropping a connection is not destructive
+  BG = rl.Color(56, 56, 61, 255)
+  BG_PRESSED = rl.Color(84, 84, 90, 255)
+
+  def __init__(self, disconnect_network: Callable):
+    super().__init__()
+    self._disconnect_network = disconnect_network
+    self._slash_txt = gui_app.texture("icons_mici/settings/network/wifi_strength_slash.png", 38, 38)
+    self.set_rect(rl.Rectangle(0, 0, 84 + self.MARGIN * 2, 84 + self.MARGIN * 2))
+
+  def _handle_mouse_release(self, mouse_pos: MousePos):
+    super()._handle_mouse_release(mouse_pos)
+    dlg = BigConfirmationDialog("slide to\ndisconnect", gui_app.texture("icons_mici/settings/network/wifi_strength_slash.png", 54, 54),
+                                self._disconnect_network)
+    gui_app.push_widget(dlg)
+
+  def _render(self, _):
+    center = rl.Vector2(self._rect.x + self._rect.width / 2, self._rect.y + self._rect.height / 2)
+    rl.draw_circle_v(center, self.RADIUS, self.BG_PRESSED if self.is_pressed else self.BG)
+    rl.draw_texture_ex(self._slash_txt, (center.x - self._slash_txt.width / 2, center.y - self._slash_txt.height / 2),
+                       0, 1.0, rl.WHITE)
+
+
 class WifiButton(BigButton):
   LABEL_PADDING = 98
   LABEL_WIDTH = 402 - 98 - 28
@@ -111,9 +137,11 @@ class WifiButton(BigButton):
     self._connecting_ssid = connecting_ssid
     self._wifi_icon = WifiIcon(network)
     self._forget_btn = ForgetButton(self._forget_network)
+    self._disconnect_btn = DisconnectButton(self._disconnect_network)
     self._check_txt = gui_app.texture("icons_mici/setup/driver_monitoring/dm_check.png", 32, 32)
     self._network_missing = False
     self._network_forgetting = False
+    self._network_disconnecting = False
     self._wrong_password = False
 
   @property
@@ -142,8 +170,17 @@ class WifiButton(BigButton):
     self._network_forgetting = True
     self._wifi_manager.forget_connection(self._network.ssid)
 
+  def _disconnect_network(self):
+    if self._network_disconnecting:
+      return
+    self._network_disconnecting = True
+    self._wifi_manager.disconnect_connection(self._network.ssid)
+
   def on_forgotten(self):
     self._network_forgetting = False
+
+  def on_disconnected(self):
+    self._network_disconnecting = False
 
   def set_network_missing(self, missing: bool):
     self._network_missing = missing
@@ -171,12 +208,22 @@ class WifiButton(BigButton):
 
   @property
   def _show_forget_btn(self) -> bool:
-    if self._is_tethering or self._network_forgetting:
+    if self._is_tethering or self._network_forgetting or self._show_disconnect_btn:
       return False
     return (self._is_saved and not self._wrong_password) or self._is_connecting
 
+  @property
+  def _show_disconnect_btn(self) -> bool:
+    # 402 units of row cannot hold both buttons plus the status word, so the slot is contextual:
+    # disconnect while connected, forget once it is only saved
+    if self._is_tethering or self._network_forgetting or self._network_disconnecting:
+      return False
+    return self._is_connected
+
   def _handle_mouse_release(self, mouse_pos: MousePos):
     if self._show_forget_btn and rl.check_collision_point_rec(mouse_pos, self._forget_btn.rect):
+      return
+    if self._show_disconnect_btn and rl.check_collision_point_rec(mouse_pos, self._disconnect_btn.rect):
       return
     super()._handle_mouse_release(mouse_pos)
 
@@ -184,18 +231,21 @@ class WifiButton(BigButton):
     return 48
 
   def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
-    super().set_touch_valid_callback(lambda: touch_callback() and not self._forget_btn.is_pressed)
+    super().set_touch_valid_callback(lambda: touch_callback() and not self._forget_btn.is_pressed and not self._disconnect_btn.is_pressed)
     self._forget_btn.set_touch_valid_callback(touch_callback)
+    self._disconnect_btn.set_touch_valid_callback(touch_callback)
 
   def _update_state(self):
     super()._update_state()
     if any((self._network_missing, self._is_connecting, self._is_connected, self._network_forgetting,
-            self._network.security_type == SecurityType.UNSUPPORTED)):
+            self._network_disconnecting, self._network.security_type == SecurityType.UNSUPPORTED)):
       self.set_enabled(False)
       self._sub_label.set_color(rl.Color(255, 255, 255, int(255 * 0.585)))
       self._sub_label.set_font_weight(FontWeight.ROMAN)
       if self._network_forgetting:
         self.set_value("forgetting...")
+      elif self._network_disconnecting:
+        self.set_value("disconnecting...")
       elif self._is_connecting:
         self.set_value("starting..." if self._is_tethering else "connecting...")
       elif self._is_connected:
@@ -219,9 +269,10 @@ class WifiButton(BigButton):
     if self.value:
       sub_label_x = self._rect.x + self.LABEL_HORIZONTAL_PADDING
       label_y = btn_y + self._rect.height - self.LABEL_VERTICAL_PADDING
-      sub_label_w = self.SUB_LABEL_WIDTH - (self._forget_btn.rect.width if self._show_forget_btn else 0)
+      sub_label_w = self.SUB_LABEL_WIDTH - (self._forget_btn.rect.width if self._show_forget_btn else 0) \
+                                         - (self._disconnect_btn.rect.width if self._show_disconnect_btn else 0)
       sub_label_height = self._sub_label.get_content_height(sub_label_w)
-      if self._is_connected and not self._network_forgetting:
+      if self._is_connected and not self._network_forgetting and not self._network_disconnecting:
         check_y = int(label_y - sub_label_height + (sub_label_height - self._check_txt.height) / 2)
         rl.draw_texture_ex(self._check_txt, rl.Vector2(sub_label_x, check_y), 0.0, 1.0, rl.Color(255, 255, 255, int(255 * 0.9 * 0.65)))
         sub_label_x += self._check_txt.width + 14
@@ -230,11 +281,19 @@ class WifiButton(BigButton):
 
     self._wifi_icon.render(rl.Rectangle(self._rect.x + 30, btn_y + 30, self._wifi_icon.rect.width, self._wifi_icon.rect.height))
 
+    btn_right = self._rect.x + self._rect.width
     if self._show_forget_btn:
       self._forget_btn.render(rl.Rectangle(
-        self._rect.x + self._rect.width - self._forget_btn.rect.width,
+        btn_right - self._forget_btn.rect.width,
         btn_y + self._rect.height - self._forget_btn.rect.height,
         self._forget_btn.rect.width, self._forget_btn.rect.height))
+      btn_right -= self._forget_btn.rect.width
+
+    if self._show_disconnect_btn:
+      self._disconnect_btn.render(rl.Rectangle(
+        btn_right - self._disconnect_btn.rect.width,
+        btn_y + self._rect.height - self._disconnect_btn.rect.height,
+        self._disconnect_btn.rect.width, self._disconnect_btn.rect.height))
 
 
 class ScanningButton(BigButton):
@@ -298,6 +357,9 @@ class WifiUIMici(NavScroller):
 
   def _on_disconnected(self):
     self._connecting = None
+    for btn in self._scroller.items:
+      if isinstance(btn, WifiButton):
+        btn.on_disconnected()
 
   def _on_forgotten(self, ssid=None):
     self._connecting = None

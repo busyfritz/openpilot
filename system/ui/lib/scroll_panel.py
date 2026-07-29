@@ -41,12 +41,10 @@ class GuiScrollPanel:
     if DEBUG:
       rl.draw_rectangle_lines(0, 0, abs(int(self._velocity_filter_y.x)), 10, rl.RED)
 
-    # Handle mouse wheel only when the mouse cursor is over this panel
-    mouse_wheel = rl.get_mouse_wheel_move()
-    if mouse_wheel != 0:
-      mouse_pos = rl.get_mouse_position()
-      if rl.check_collision_point_rec(mouse_pos, bounds):
-        self._offset_filter_y.x += mouse_wheel * MOUSE_WHEEL_SCROLL_SPEED
+    # wheel scrolls this panel only while the cursor sits inside its bounds
+    wheel = rl.get_mouse_wheel_move()
+    if wheel and rl.check_collision_point_rec(rl.get_mouse_position(), bounds):
+      self._offset_filter_y.x += wheel * MOUSE_WHEEL_SCROLL_SPEED
 
     max_scroll_distance = max(0, content.height - bounds.height)
     if self._scroll_state == ScrollState.IDLE:

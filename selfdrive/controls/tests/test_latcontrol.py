@@ -1,12 +1,12 @@
 from parameterized import parameterized
 
 from cereal import car, log
-from opendbc.car.car_helpers import interfaces
-from opendbc.car.honda.values import CAR as HONDA
-from opendbc.car.toyota.values import CAR as TOYOTA
-from opendbc.car.nissan.values import CAR as NISSAN
-from opendbc.car.gm.values import CAR as GM
-from opendbc.car.vehicle_model import VehicleModel
+from iqdbc.car.car_helpers import interfaces
+from iqdbc.car.honda.values import CAR as HONDA
+from iqdbc.car.toyota.values import CAR as TOYOTA
+from iqdbc.car.nissan.values import CAR as NISSAN
+from iqdbc.car.gm.values import CAR as GM
+from iqdbc.car.vehicle_model import VehicleModel
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car.helpers import convert_to_capnp
 from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
@@ -26,7 +26,7 @@ class TestLatControl:
     CP = CarInterface.get_non_essential_params(car_name)
     CP_IQ = CarInterface.get_non_essential_params_iq(CP, car_name)
     CI = CarInterface(CP, CP_IQ)
-    iqpilot_interfaces.setup_interfaces(CI)
+    iqpilot_interfaces.apply_iq_car_config(CI)
     CP_IQ = convert_to_capnp(CP_IQ)
     VM = VehicleModel(CP)
 

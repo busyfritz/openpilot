@@ -162,7 +162,7 @@ class SettingsHubLayout(Widget):
     self._power_rect = rl.Rectangle(0, 0, 0, 0)
     self._offroad_rect = rl.Rectangle(0, 0, 0, 0)
     self._night_rect = rl.Rectangle(0, 0, 0, 0)
-    self._quiet_rect = rl.Rectangle(0, 0, 0, 0)
+    self._silent_rect = rl.Rectangle(0, 0, 0, 0)
 
     # Build the grid from the settings panels, skipping ones hidden from navigation (e.g. Cruise).
     panels = self._settings._panels
@@ -442,14 +442,14 @@ class SettingsHubLayout(Widget):
     self._power_rect = rl.Rectangle(bx + BUBBLE_SIZE + 18, cy - BUBBLE_SIZE / 2, BUBBLE_SIZE, BUBBLE_SIZE)
     self._offroad_rect = rl.Rectangle(bx + 2 * (BUBBLE_SIZE + 18), cy - BUBBLE_SIZE / 2, BUBBLE_SIZE, BUBBLE_SIZE)
     self._night_rect = rl.Rectangle(bx + 3 * (BUBBLE_SIZE + 18), cy - BUBBLE_SIZE / 2, BUBBLE_SIZE, BUBBLE_SIZE)
-    self._quiet_rect = rl.Rectangle(bx + 4 * (BUBBLE_SIZE + 18), cy - BUBBLE_SIZE / 2, BUBBLE_SIZE, BUBBLE_SIZE)
+    self._silent_rect = rl.Rectangle(bx + 4 * (BUBBLE_SIZE + 18), cy - BUBBLE_SIZE / 2, BUBBLE_SIZE, BUBBLE_SIZE)
     mouse = rl.get_mouse_position()
     for r, icon in ((self._restart_rect, self._restart_icon), (self._power_rect, self._power_icon)):
       pressed = self.is_pressed and rl.check_collision_point_rec(mouse, r)
       rl.draw_circle(int(r.x + BUBBLE_SIZE / 2), int(cy), BUBBLE_SIZE / 2, BUBBLE_RED_PRESSED if pressed else BUBBLE_RED)
       rl.draw_texture(icon, int(r.x + (BUBBLE_SIZE - icon.width) / 2), int(cy - icon.height / 2), rl.WHITE)
     # Always Offroad bubble (grey when off, teal when on)
-    offroad_active = ui_state.params.get_bool("OffroadMode")
+    offroad_active = ui_state.params.get_bool("IQAlwaysOffroad")
     pressed = self.is_pressed and rl.check_collision_point_rec(mouse, self._offroad_rect)
     offroad_color = (BUBBLE_TEAL_PRESSED if pressed else BUBBLE_TEAL) if offroad_active else (BUBBLE_GREY_PRESSED if pressed else BUBBLE_GREY)
     rl.draw_circle(int(self._offroad_rect.x + BUBBLE_SIZE / 2), int(cy), BUBBLE_SIZE / 2, offroad_color)
@@ -465,15 +465,15 @@ class SettingsHubLayout(Widget):
                     int(self._night_rect.x + (BUBBLE_SIZE - self._night_icon.width) / 2),
                     int(cy - self._night_icon.height / 2), rl.WHITE)
 
-    # Quiet Mode bubble (grey bell when off, red bell-with-slash when on)
-    quiet_active = ui_state.params.get_bool("IQAlertSilence")
-    pressed = self.is_pressed and rl.check_collision_point_rec(mouse, self._quiet_rect)
-    quiet_color = (BUBBLE_RED_PRESSED if pressed else BUBBLE_RED) if quiet_active else (BUBBLE_GREY_PRESSED if pressed else BUBBLE_GREY)
-    quiet_icon = self._bell_slash_icon if quiet_active else self._bell_icon
-    rl.draw_circle(int(self._quiet_rect.x + BUBBLE_SIZE / 2), int(cy), BUBBLE_SIZE / 2, quiet_color)
-    rl.draw_texture(quiet_icon,
-                    int(self._quiet_rect.x + (BUBBLE_SIZE - quiet_icon.width) / 2),
-                    int(cy - quiet_icon.height / 2), rl.WHITE)
+    # Silent Mode bubble (grey bell when off, red bell-with-slash when on)
+    silent_active = ui_state.params.get_bool("IQAlertSilence")
+    pressed = self.is_pressed and rl.check_collision_point_rec(mouse, self._silent_rect)
+    silent_color = (BUBBLE_RED_PRESSED if pressed else BUBBLE_RED) if silent_active else (BUBBLE_GREY_PRESSED if pressed else BUBBLE_GREY)
+    silent_icon = self._bell_slash_icon if silent_active else self._bell_icon
+    rl.draw_circle(int(self._silent_rect.x + BUBBLE_SIZE / 2), int(cy), BUBBLE_SIZE / 2, silent_color)
+    rl.draw_texture(silent_icon,
+                    int(self._silent_rect.x + (BUBBLE_SIZE - silent_icon.width) / 2),
+                    int(cy - silent_icon.height / 2), rl.WHITE)
 
     # Small version label, top-right of the header row. Its scroll viewport
     # starts after the title, so long branch text does not clip at the bubbles.
@@ -517,7 +517,7 @@ class SettingsHubLayout(Widget):
       self._toggle_offroad_prompt()
     elif rl.check_collision_point_rec(mouse_pos, self._night_rect):
       ui_state.params.put_bool("NightMode", not ui_state.params.get_bool("NightMode"))
-    elif rl.check_collision_point_rec(mouse_pos, self._quiet_rect):
+    elif rl.check_collision_point_rec(mouse_pos, self._silent_rect):
       ui_state.params.put_bool("IQAlertSilence", not ui_state.params.get_bool("IQAlertSilence"))
 
   def _reboot_prompt(self):
@@ -544,13 +544,13 @@ class SettingsHubLayout(Widget):
 
   def _toggle_offroad_prompt(self):
     if ui_state.engaged:
-      gui_app.set_modal_overlay(alert_dialog(tr("Disengage to Enter Always Offroad Mode")))
+      gui_app.set_modal_overlay(alert_dialog(tr("Disengage before forcing offroad")))
       return
-    active = ui_state.params.get_bool("OffroadMode")
-    msg = tr("Are you sure you want to exit Always Offroad mode?") if active else tr("Are you sure you want to enter Always Offroad mode?")
+    active = ui_state.params.get_bool("IQAlwaysOffroad")
+    msg = tr("Leave forced-offroad mode now?") if active else tr("Switch the device into forced-offroad mode?")
 
     def _confirm(result: int):
       if result == DialogResult.CONFIRM and not ui_state.engaged:
-        ui_state.params.put_bool("OffroadMode", not active)
+        ui_state.params.put_bool("IQAlwaysOffroad", not active)
 
     gui_app.set_modal_overlay(ConfirmDialog(msg, tr("Confirm")), callback=_confirm)

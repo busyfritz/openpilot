@@ -7,7 +7,7 @@ Test your vehicle's lateral control tuning with this tool. The tool will test th
 
 ## Instructions
 
-1. Check out a development branch such as `master-mici` on your comma device.
+1. Check out a development branch such as `master-mici` on your device. The toggle is hidden on release branches.
 2. The full maneuver suite runs at 20 and 30 mph.
 3. Enable "Lateral Maneuver Mode" in Settings > Developer on the device while offroad. Alternatively, set the parameter manually:
 
@@ -17,7 +17,7 @@ Test your vehicle's lateral control tuning with this tool. The tool will test th
 
 4. Turn your vehicle back on. You will see "Lateral Maneuver Mode".
 
-5. Ensure the area ahead is clear, as iqpilot will command lateral acceleration steps in this mode. Once you are ready, set ACC manually to the target speed shown on screen and let iqpilot stabilize lateral. After 2 seconds of steady straight driving, the maneuver will begin automatically. iqpilot lateral control stays engaged between maneuvers normally while waiting for the next maneuver's readiness conditions. The maneuver will be aborted and repeated if speed is out of range, steering is touched or iqpilot disengages.
+5. Ensure the area ahead is clear, as IQ.Pilot will command lateral acceleration steps in this mode. Once you are ready, set ACC manually to the target speed shown on screen and let IQ.Pilot stabilize lateral. After 2 seconds of steady straight driving on a road under 250 m radius and under 6.8° of roll, the maneuver will begin automatically. IQ.Pilot lateral control stays engaged between maneuvers normally while waiting for the next maneuver's readiness conditions. The maneuver will be aborted and repeated if speed is out of range, the steering wheel or gas is touched, or IQ.Pilot disengages.
 
 6. When the testing is complete, you'll see an alert that says "Maneuvers Finished." Complete the route by pulling over and turning off the vehicle.
 
@@ -37,4 +37,18 @@ Test your vehicle's lateral control tuning with this tool. The tool will test th
     Opening report: tools/lateral_maneuvers/lateral_reports/KIA_EV6_98395b7c5b27882e_000001cc--5a73bde686.html
     ```
 
-   The iqpilot `generate_report.py` also supports auto-detection of lateral sweeps in any route without `alertDebug` markers (pass `--auto`), and ranks the top-N highest-peak sweeps by speed/peak filters. See `generate_report.py --help`.
+   The IQ.Pilot `generate_report.py` also takes a path to a local `rlog.zst` or a directory of them, supports
+   auto-detection of lateral sweeps in any route without `alertDebug` markers (pass `--auto`), and ranks the
+   top-N highest-peak sweeps by speed/peak filters. See `generate_report.py --help`.
+
+## Testing the tooling without a car
+
+`sim_maneuvers.py` runs `lateral_maneuversd` as a real process against a synthetic steering rack and writes an
+rlog that `generate_report.py` reads. Use it to verify the daemon and the report generator after changing either:
+
+```sh
+$ python tools/lateral_maneuvers/sim_maneuvers.py --out /tmp/lat/rlog.zst
+$ python tools/lateral_maneuvers/generate_report.py /tmp/lat/rlog.zst
+```
+
+The full suite takes about 5 minutes of wall clock; `--max-maneuvers N` stops early.

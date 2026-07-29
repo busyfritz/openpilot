@@ -2,7 +2,7 @@ import time
 import pytest
 import itertools
 
-from opendbc.car.structs import CarParams
+from iqdbc.car.structs import CarParams
 from panda import Panda
 
 # TODO: test relay

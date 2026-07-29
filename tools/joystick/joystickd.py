@@ -4,7 +4,7 @@ import math
 import numpy as np
 
 from cereal import messaging, car
-from opendbc.car.vehicle_model import VehicleModel
+from iqdbc.car.vehicle_model import VehicleModel
 from openpilot.common.realtime import DT_CTRL, Ratekeeper
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
@@ -15,6 +15,7 @@ MAX_STEERING_ANGLE_DEG = 500.0
 ACCEL_RELEASE_THRESHOLD = 0.01
 DECEL_REQUEST_THRESHOLD = -0.02
 STOPPING_HOLD_SPEED_MARGIN = 0.3
+STOPPING_SPEED = 0.25
 
 
 def get_lateral_joystick_outputs(CP: car.CarParams, VM: VehicleModel, v_ego: float, roll: float, steer_axis: float) -> tuple[float, float, float]:
@@ -83,7 +84,7 @@ def joystickd_thread():
 
       positive_accel_requested = accel_cmd > ACCEL_RELEASE_THRESHOLD
       negative_accel_requested = accel_cmd < DECEL_REQUEST_THRESHOLD
-      near_stop = sm['carState'].standstill or sm['carState'].vEgo <= (CP.vEgoStopping + STOPPING_HOLD_SPEED_MARGIN)
+      near_stop = sm['carState'].standstill or sm['carState'].vEgo <= (STOPPING_SPEED + STOPPING_HOLD_SPEED_MARGIN)
 
       if positive_accel_requested:
         stop_hold_latched = False
@@ -95,7 +96,7 @@ def joystickd_thread():
         stop_hold_latched = True
 
       # If we are moving again and driver is not asking for decel, clear stale hold state.
-      if stop_hold_latched and sm['carState'].vEgo > (CP.vEgoStopping + STOPPING_HOLD_SPEED_MARGIN) and not negative_accel_requested:
+      if stop_hold_latched and sm['carState'].vEgo > (STOPPING_SPEED + STOPPING_HOLD_SPEED_MARGIN) and not negative_accel_requested:
         stop_hold_latched = False
         decel_intent_latched = False
 

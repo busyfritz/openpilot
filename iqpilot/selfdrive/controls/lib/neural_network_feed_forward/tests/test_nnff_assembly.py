@@ -18,7 +18,12 @@ from openpilot.selfdrive.controls.lib.latcontrol_torque import NeuralNetworkFeed
 from openpilot.selfdrive.controls.lib.latcontrol_torque import TORQUE_NN_MODEL_PATH
 
 _REAL_MODEL = next((f for f in sorted(os.listdir(TORQUE_NN_MODEL_PATH))
-                    if f.endswith(".json") and f != "MOCK.json"))
+                    if f.endswith(".json") and f != "MOCK.json"), None)
+
+# Models are shipped separately and re-added as retrained; with none present,
+# NNFF is a no-op (falls back to stock torque FF), so the assembly tests skip.
+pytestmark = pytest.mark.skipif(_REAL_MODEL is None,
+                                reason="no NNFF models present (nuked pending retraining)")
 
 
 def _torque_fn():

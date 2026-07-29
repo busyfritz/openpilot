@@ -2,10 +2,10 @@
 
 import argparse
 from collections import defaultdict
-from opendbc.car.debug.format_fingerprints import format_brand_fw_versions
+from iqdbc.car.debug.format_fingerprints import format_brand_fw_versions
 
-from opendbc.car.fingerprints import MIGRATION
-from opendbc.car.fw_versions import MODEL_TO_BRAND, match_fw_to_car
+from iqdbc.car.fingerprints import MIGRATION
+from iqdbc.car.fw_versions import MODEL_TO_BRAND, match_fw_to_car
 from openpilot.tools.lib.logreader import LogReader, ReadMode
 
 if __name__ == "__main__":

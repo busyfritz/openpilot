@@ -6,7 +6,7 @@ long enough toggles Experimental mode exactly once per hold. Only active when
 IQ.Pilot owns longitudinal control and cruise is available.
 """
 from cereal import car, custom
-from opendbc.car import structs
+from iqdbc.car import structs
 from openpilot.common.params import Params
 
 _Button = car.CarState.ButtonEvent.Type

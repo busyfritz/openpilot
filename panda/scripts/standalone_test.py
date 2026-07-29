@@ -2,7 +2,7 @@
 import struct
 import time
 
-from opendbc.car.structs import CarParams
+from iqdbc.car.structs import CarParams
 from panda import Panda
 
 if __name__ == "__main__":

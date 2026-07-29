@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import argparse
 from tqdm import tqdm
-from opendbc.car.carlog import carlog
-from opendbc.car.uds import UdsClient, MessageTimeoutError, NegativeResponseError, InvalidSubAddressError, \
+from iqdbc.car.carlog import carlog
+from iqdbc.car.uds import UdsClient, MessageTimeoutError, NegativeResponseError, InvalidSubAddressError, \
                             SESSION_TYPE, DATA_IDENTIFIER_TYPE
-from opendbc.car.structs import CarParams
+from iqdbc.car.structs import CarParams
 from panda import Panda
 
 if __name__ == "__main__":

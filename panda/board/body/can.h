@@ -7,7 +7,7 @@
 #include "board/health.h"
 #include "board/body/motor_control.h"
 #include "board/drivers/can_common_declarations.h"
-#include "opendbc/safety/declarations.h"
+#include "iqdbc/safety/declarations.h"
 
 #define BODY_CAN_ADDR_MOTOR_SPEED      0x201U
 #define BODY_CAN_MOTOR_SPEED_PERIOD_US 10000U

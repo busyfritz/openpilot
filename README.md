@@ -6,13 +6,13 @@
 
 ## Running IQ.Pilot
 * A modern comma, or clone device to run this software (Comma 3, 3x, 4, Konik A1/M, Mr.One C3, C3 Lite)
-* One of [the supported cars](https://gitlvb.teallvbs.xyz/IQ.Lvbs/IQ.Pilot/src/branch/release/opendbc_repo/docs/CARS.md).
+* One of [the supported cars](https://gitlvb.teallvbs.xyz/IQ.Lvbs/IQ.Pilot/src/branch/release/iqdbc_repo/docs/CARS.md).
 * A [car harness](https://comma.ai/shop/products/car-harness) to connect to your car
-#### Side Note: Volkswagen Group, and Tesla vehicles are currently the most compatible for use with IQ.Pilot, other manufacturers are supported at a minimum to the same level as stock openpilot, but are not a top priority while we are in beta.
+#### Wondering if IQ.Pilot supports your car? IQ.Pilot supports every car [stock openpilot](https://gitlvb.teallvbs.xyz/IQ.Lvbs/IQ.Pilot/src/branch/release/iqdbc_repo/docs/CARS.md) supports!
 ## Installation
 #### Installing Via Installer URL:
 #### Enter the following into your device custom URL box to install IQ.Pilot:
-`IQLvbs/release`
+`installer.iqlvbs.com/release`
 #### Having Trouble? If your device is currently running AGNOS 13.1 or older, you should install latest stock openpilot, then install IQ.Pilot, or try one of the alternative methods listed below!
 
 
@@ -27,11 +27,11 @@
 
 #### Installing Via SSH:
 #### Once you are connected to your device via SSH, you can paste the following command below to install IQ.Pilot:
-`cd .. && rm -rf openpilot && git clone https://github.com/IQLvbs/openpilot.git -b release && cd openpilot && sudo reboot`
+`cd .. && rm -rf openpilot && git clone https://git.konn3kt.com/IQ.Lvbs/IQ.Pilot openpilot -b release && cd openpilot && sudo reboot`
 #### If you'd like to backup your previous installation as well, paste the following command below to install IQ.Pilot:
-`cd .. && mv openpilot openpilot_backup_X && git clone https://github.com/IQLvbs/openpilot.git -b release && cd openpilot && sudo reboot`
-#### Alternatively, you can use your existing fork's built in tools to switch your branch as well:
-`git remote add iqpilot https://github.com/IQLvbs/openpilot.git && op switch iqpilot release`
+`cd .. && mv openpilot openpilot_backup_X && git clone https://git.konn3kt.com/IQ.Lvbs/IQ.Pilot -b release && cd openpilot && sudo reboot`
+#### Alternatively, you can use your existing fork's built in tools to switch your branch as well: 
+`git remote add iqpilot https://git.konn3kt.com/IQ.Lvbs/IQ.Pilot && op switch iqpilot release` 
 
 ---
 

@@ -95,8 +95,17 @@ _CAMERA_LABELS = {
 
 def speed_camera_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
   nav = sm['iqNavState']
-  label = _CAMERA_LABELS.get(int(getattr(nav.cameraType, "raw", nav.cameraType)), "Speed Camera")
+  ctype = int(getattr(nav.cameraType, "raw", nav.cameraType))
+  label = _CAMERA_LABELS.get(ctype, "Speed Camera")
   distance = float(nav.cameraDistance)
+  # RF (BLE/WiFi) Flock detection is a live proximity hit with no meaningful
+  # distance — flockd/navd flag it with distance 0 on the alpr camera type.
+  if ctype == int(custom.IQNavState.CameraType.alpr) and distance <= 0.0:
+    return Alert(
+      "Flock Camera Detected",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.HIGH, VisualAlert.none, AudibleAlert.prompt, .2)
   if metric:
     dist_str = f"{distance:.0f} m" if distance < 1000.0 else f"{distance / 1000.0:.1f} km"
   else:
@@ -186,7 +195,7 @@ _GUIDANCE_EVENTS: EVENTS_IQ_TYPE = {
 
   EventNameIQ.modelTurnLeft: {
     ET.WARNING: Alert(
-      "Turning Left",
+      "Lane Turn Left",
       "",
       AlertStatus.normal, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, 1.),
@@ -194,7 +203,7 @@ _GUIDANCE_EVENTS: EVENTS_IQ_TYPE = {
 
   EventNameIQ.modelTurnRight: {
     ET.WARNING: Alert(
-      "Turning Right",
+      "Lane Turn Right",
       "",
       AlertStatus.normal, AlertSize.small,
       Priority.LOW, VisualAlert.none, AudibleAlert.none, 1.),
@@ -326,6 +335,13 @@ _NOTICE_EVENTS: EVENTS_IQ_TYPE = {
       "",
       AlertStatus.normal, AlertSize.none,
       Priority.MID, VisualAlert.none, AudibleAlert.prompt, 3.),
+  },
+
+  # outranks the generic processNotRunning alert so the driver sees why engagement is blocked
+  EventNameIQ.modelUpdating: {
+    ET.NO_ENTRY: NoEntryAlert("Update finishes while parked with internet",
+                              alert_text_1="Driving Model Updating",
+                              priority=Priority.MID),
   },
 
 }

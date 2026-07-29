@@ -6,14 +6,14 @@ from datetime import datetime
 import numpy as np
 
 from cereal import messaging, custom
-from opendbc.car import structs
+from iqdbc.car import structs
 from openpilot.common.constants import CV
 from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.car.cruise import V_CRUISE_MAX
 from openpilot.iqpilot.selfdrive.controls.lib.custom_stop_distance import CustomStopDistance
 from openpilot.iqpilot.selfdrive.controls.lib.iq_dynamic.engine import IQDynamicController
 from openpilot.iqpilot.selfdrive.controls.lib.iq_dynamic.imahelper import IQConstants
-from openpilot.iqpilot.selfdrive.controls.lib.helpers.e2e_alerts import E2EAlertsHelper
+from openpilot.iqpilot.selfdrive.controls.lib.helpers.e2e_alerts import EndToEndAlertEngine
 from openpilot.iqpilot.selfdrive.controls.lib.slc_vcruise import SLCVCruise
 from openpilot.iqpilot.selfdrive.controls.lib.speed_limit_controller import LIMIT_ADAPT_ACC
 from openpilot.iqpilot.selfdrive.selfdrived.events import IQEvents
@@ -26,17 +26,15 @@ SpeedLimitSource = custom.IQPlan.SpeedLimit.Source
 NavProvider = custom.IQNavState.LongitudinalProvider
 NavLongitudinalState = custom.IQNavState.LongitudinalState
 
-
 class LongitudinalPlannerIQ:
   def __init__(self, CP: structs.CarParams, CP_IQ: structs.IQCarParams, mpc):
     self.events_iq = IQEvents()
     self.iq_dynamic = IQDynamicController(CP, mpc)
     self.custom_stop_distance = CustomStopDistance()
-    self.slc = SLCVCruise()
+    self.slimit = SLCVCruise()
     self.generation = int(model_bundle.generation) if (model_bundle := get_active_bundle()) else None
     self.source = LongitudinalPlanSource.cruise
-    self.e2e_alerts_helper = E2EAlertsHelper()
-
+    self.e2e_alerts = EndToEndAlertEngine()
     self.output_v_target = 0.
     self.output_a_target = 0.
     self.speed_limit_last = 0.
@@ -84,17 +82,17 @@ class LongitudinalPlannerIQ:
     else:
       clocks = sm.get('clocks', None) if isinstance(sm, dict) else None
       time_validated = bool(getattr(clocks, 'timeValid', False))
-    slc_v_cruise = self.slc.update(slc_apply_enabled, now, time_validated, v_cruise, v_ego, sm)
-    self.iq_dynamic.set_slc_experimental_mode(self.slc.slc_experimental_mode)
+    slc_v_cruise = self.slimit.update(slc_apply_enabled, now, time_validated, v_cruise, v_ego, sm)
+    self.iq_dynamic.set_slc_experimental_mode(self.slimit.slc_experimental_mode)
     self.iq_dynamic.update(sm)
     # Prefer confirmed controller output for UI/planner rendering.
     # Fall back to active (policy-resolved) target/source when confirmed is unavailable.
-    display_speed_limit = self.slc.slc_target if self.slc.slc_target > 0 else self.slc.slc_active_target
-    display_source = self.slc.slc_source if self.slc.slc_source != "None" else self.slc.slc_active_source
+    display_speed_limit = self.slimit.slc_target if self.slimit.slc_target > 0 else self.slimit.slc_active_target
+    display_source = self.slimit.slc_source if self.slimit.slc_source != "None" else self.slimit.slc_active_source
 
     if display_speed_limit > 0:
       self.speed_limit_last = display_speed_limit
-      self.speed_limit_final_last = display_speed_limit + self.slc.slc_offset
+      self.speed_limit_final_last = display_speed_limit + self.slimit.slc_offset
     elif display_source == "None":
       self.speed_limit_last = 0.0
       self.speed_limit_final_last = 0.0
@@ -120,8 +118,8 @@ class LongitudinalPlannerIQ:
     self.output_v_target, self.output_a_target = targets[self.source]
     self.output_v_target = self._apply_force_stop(self.output_v_target, v_ego, sm, slc_apply_enabled)
     # envelope shaping only in Assist mode: info/warn must never change the plan
-    self._envelope_enabled = (slc_apply_enabled and bool(getattr(self.slc, "controller_enabled", False))
-                              and bool(getattr(self.slc, "mode_assist", False)))
+    self._envelope_enabled = (slc_apply_enabled and bool(getattr(self.slimit, "controller_enabled", False))
+                              and bool(getattr(self.slimit, "mode_assist", False)))
     return self.output_v_target, self.output_a_target
 
   def cruise_envelope(self, v_target: float, v_ego: float, t_idxs) -> np.ndarray:
@@ -131,12 +129,12 @@ class LongitudinalPlannerIQ:
     env = np.full(len(t_idxs), max(float(v_target), 0.0))
     if not getattr(self, "_envelope_enabled", False):
       return env
-    slc = getattr(self.slc, "slc", None)
+    slc = getattr(self.slimit, "slc", None)
     next_limit = float(getattr(slc, "next_speed_limit", 0.0) or 0.0)
     next_dist = float(getattr(slc, "next_speed_distance", 0.0) or 0.0)
     if next_limit <= 0.0 or next_dist <= 0.0:
       return env
-    next_target = max(next_limit + float(getattr(self.slc, "slc_offset", 0.0) or 0.0), 0.0)
+    next_target = max(next_limit + float(getattr(self.slimit, "slc_offset", 0.0) or 0.0), 0.0)
     if next_target >= env[0]:
       return env
     travel = np.maximum(v_ego, 1.0) * np.asarray(t_idxs)
@@ -145,10 +143,10 @@ class LongitudinalPlannerIQ:
 
   def update(self, sm: messaging.SubMaster) -> None:
     self.events_iq.clear()
-    for event_name in getattr(self.slc, 'pending_events', []):
+    for event_name in getattr(self.slimit, 'pending_events', []):
       self.events_iq.add(event_name)
     self.custom_stop_distance.update()
-    self.e2e_alerts_helper.update(sm, self.events_iq)
+    self.e2e_alerts.update(sm, self.events_iq)
     if bool(getattr(sm["iqCarState"], "alcOverrideAlert", False)):
       self.events_iq.add(custom.IQOnroadEvent.EventName.steeringOverrideReengageAlc)
 
@@ -213,8 +211,8 @@ class LongitudinalPlannerIQ:
       # Speed Limit
       speedLimit = plan_msg.speedLimit
       resolver = speedLimit.resolver
-      speed_limit = float(self.slc.slc_target if self.slc.slc_target > 0 else self.slc.slc_active_target)
-      speed_limit_offset = float(self.slc.slc_offset)
+      speed_limit = float(self.slimit.slc_target if self.slimit.slc_target > 0 else self.slimit.slc_active_target)
+      speed_limit_offset = float(self.slimit.slc_offset)
       speed_limit_final = speed_limit + speed_limit_offset if speed_limit > 0 else 0.
       speed_limit_valid = speed_limit > 0.
       speed_limit_last_valid = self.speed_limit_last > 0.
@@ -230,26 +228,25 @@ class LongitudinalPlannerIQ:
       resolver.source = self.speed_limit_source
 
       assist = speedLimit.assist
-      slc_assist_state = self.slc.assist_state
-      assist.enabled = bool(self.slc.slc_target > 0 or self.slc.slc_unconfirmed > 0)
-      assist.active = self.source == LongitudinalPlanSource.speedLimitAssist and self.slc.slc_target > 0
+      slc_assist_state = self.slimit.assist_state
+      assist.enabled = bool(self.slimit.slc_target > 0 or self.slimit.slc_unconfirmed > 0)
+      assist.active = self.source == LongitudinalPlanSource.speedLimitAssist and self.slimit.slc_target > 0
       if slc_assist_state is not None:
         assist.state = slc_assist_state
       elif not assist.enabled:
         assist.state = SpeedLimitAssistState.disabled
-      elif self.slc.slc_unconfirmed > 0:
+      elif self.slimit.slc_unconfirmed > 0:
         assist.state = SpeedLimitAssistState.preActive
       elif assist.active:
         assist.state = SpeedLimitAssistState.active
       else:
         assist.state = SpeedLimitAssistState.inactive
       assist.vTarget = float(self.output_v_target if assist.active else 255.)
-      assist.aTarget = float(self.slc.slc_a_target if assist.active else 0.)
+      assist.aTarget = float(self.slimit.slc_a_target if assist.active else 0.)
 
-      # E2E Alerts
       e2eAlerts = plan_msg.e2eAlerts
-      e2eAlerts.greenLightAlert = self.e2e_alerts_helper.queue_alert
-      e2eAlerts.leadDepartAlert = self.e2e_alerts_helper.lead_alert
+      e2eAlerts.pathOpen = self.e2e_alerts.path_alert
+      e2eAlerts.leadPullaway = self.e2e_alerts.lead_alert
 
     valid = sm.all_checks(service_list=['carState', 'controlsState'])
 

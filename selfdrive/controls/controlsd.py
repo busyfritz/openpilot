@@ -11,8 +11,8 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, lock_memory, DT_CTRL, Priority, Ratekeeper
 from openpilot.common.swaglog import cloudlog
 
-from opendbc.car.car_helpers import interfaces
-from opendbc.car.vehicle_model import VehicleModel
+from iqdbc.car.car_helpers import interfaces
+from iqdbc.car.vehicle_model import VehicleModel
 from openpilot.selfdrive.controls.lib.drive_helpers import clip_curvature
 from openpilot.selfdrive.controls.lib.latcontrol import LatControl
 from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
@@ -99,7 +99,7 @@ class Controls(IQControlsLayer):
     try:
       if self.CP.brand != 'volkswagen':
         return False
-      from opendbc.car.volkswagen.values import VolkswagenFlags
+      from iqdbc.car.volkswagen.values import VolkswagenFlags
       return bool(self.CP.flags & VolkswagenFlags.PQ)
     except Exception:
       cloudlog.exception("pq torque selection failed; using generic torque")

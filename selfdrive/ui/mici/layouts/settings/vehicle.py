@@ -69,17 +69,17 @@ class VehicleLayoutMici(NavScroller):
     self._vehicle_btn = BigButton("vehicle")
     self._vehicle_btn.set_click_callback(self._on_vehicle_clicked)
 
-    self._toyota_long = BigParamControl("enforce factory long.", "ToyotaEnforceStockLongitudinal",
+    self._toyota_long = BigParamControl("enforce factory long.", "IQToyotaFactoryLong",
                                         toggle_callback=self._on_toyota_long)
-    self._hyundai_tuning = MappedParamToggle("hyundai long. tuning", "HyundaiLongitudinalTuning",
+    self._hyundai_tuning = MappedParamToggle("hyundai long. tuning", "IQHyundaiLongTune",
                                              ["off", "dynamic", "predictive"], [0, 1, 2])
-    self._subaru_snag = BigParamControl("stop and go (beta)", "SubaruStopAndGo")
-    self._subaru_manual = BigParamControl("stop and go manual brake", "SubaruStopAndGoManualParkingBrake")
+    self._subaru_snag = BigParamControl("creep from standstill (beta)", "IQSubaruCreepAssist")
+    self._subaru_manual = BigParamControl("stop and go manual brake", "IQSubaruCreepAssistManualBrake")
     self._vw_pq_hca = BigParamControl("PQ HCA status 7 mode", "pqhca5or7Toggle")
     self._vw_lateral = BigParamControl("lateral when cruise faulted", "AllowLateralWhenLongUnavailable")
     self._vw_mqb_acc_resume = BigParamControl("MQB ACC resume", "iqMqbAccResume")
     self._vw_mqb_steering_lockout = BigParamControl("MQB steering lockout", "iqMqbSteeringLockout")
-    self._tesla_vtb = BigParamControl("virtual torque blending", "TeslaCoopSteering")
+    self._tesla_vtb = BigParamControl("virtual torque blending", "IQTeslaTorqueBlend")
 
     self._brand_widgets = {
       "toyota": [self._toyota_long],
@@ -102,7 +102,7 @@ class VehicleLayoutMici(NavScroller):
 
   def _vw_flags(self):
     try:
-      from opendbc.car.volkswagen.values import CAR
+      from iqdbc.car.volkswagen.values import CAR
       bundle = ui_state.params.get("CarPlatformBundle")
       if bundle and (platform := bundle.get("platform")):
         return CAR[platform].config.flags
@@ -113,16 +113,16 @@ class VehicleLayoutMici(NavScroller):
     return 0
 
   def _is_vw_pq(self) -> bool:
-    from opendbc.car.volkswagen.values import VolkswagenFlags
+    from iqdbc.car.volkswagen.values import VolkswagenFlags
     return bool(self._vw_flags() & VolkswagenFlags.PQ)
 
   def _is_vw_mqb(self) -> bool:
-    from opendbc.car.volkswagen.values import VolkswagenFlags
+    from iqdbc.car.volkswagen.values import VolkswagenFlags
     flags = self._vw_flags()
     return not bool(flags & (VolkswagenFlags.PQ | VolkswagenFlags.MLB | VolkswagenFlags.MEB | VolkswagenFlags.MEB_GEN2 | VolkswagenFlags.MQB_EVO))
 
   def _supports_vw_lateral_when_faulted(self) -> bool:
-    from opendbc.car.volkswagen.values import VolkswagenFlags
+    from iqdbc.car.volkswagen.values import VolkswagenFlags
     # PQ, MEB, MQB_EVO and base MQB all implement cruiseFaultLateralMode in carstate.py.
     # MLB does not.
     return not bool(self._vw_flags() & VolkswagenFlags.MLB)

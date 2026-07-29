@@ -3,9 +3,9 @@ import time
 import argparse
 import cereal.messaging as messaging
 from cereal import car
-from opendbc.car.carlog import carlog
-from opendbc.car.fw_versions import get_fw_versions, match_fw_to_car
-from opendbc.car.vin import get_vin
+from iqdbc.car.carlog import carlog
+from iqdbc.car.fw_versions import get_fw_versions, match_fw_to_car
+from iqdbc.car.vin import get_vin
 from openpilot.common.params import Params
 from openpilot.selfdrive.car.card import can_comm_callbacks, obd_callback
 from typing import Any

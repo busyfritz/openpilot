@@ -3,7 +3,7 @@ Copyright © IQ.Lvbs, apart of Project Teal Lvbs, All Rights Reserved, licensed 
 """
 from cereal import messaging
 from numpy import interp
-from opendbc.car import structs
+from iqdbc.car import structs
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_MDL
 from openpilot.iqpilot.selfdrive.controls.lib.iq_dynamic.imahelper import (

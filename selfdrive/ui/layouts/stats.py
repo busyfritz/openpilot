@@ -1,7 +1,7 @@
 import pyray as rl
 from collections.abc import Callable
 
-from openpilot.iqpilot.ui.layouts.settings.trips import TripsLayout
+from openpilot.iqpilot.ui.layouts.settings.drive_history import TripsLayout
 from openpilot.selfdrive.ui.widgets.screen_header import ScreenHeader, HEADER_HEIGHT
 from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import Widget

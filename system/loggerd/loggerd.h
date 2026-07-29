@@ -28,6 +28,18 @@ const int SEGMENT_LENGTH = LOGGERD_TEST ? atoi(getenv("LOGGERD_SEGMENT_LENGTH"))
 constexpr char PRESERVE_ATTR_NAME[] = "user.preserve";
 constexpr char PRESERVE_ATTR_VALUE = '1';
 
+constexpr int QCAM_WIDTH = 1316;
+constexpr int QCAM_HEIGHT = 826;
+constexpr int MICI_QCAM_WIDTH = 1210;
+constexpr int MICI_QCAM_HEIGHT = 760;
+static_assert(QCAM_WIDTH % 2 == 0 && QCAM_HEIGHT % 2 == 0 &&
+              MICI_QCAM_WIDTH % 2 == 0 && MICI_QCAM_HEIGHT % 2 == 0,
+              "qcamera dimensions must be even");
+
+inline bool is_mici() {
+  return Hardware::get_device_type() == cereal::InitData::DeviceType::MICI;
+}
+
 struct EncoderSettings {
   cereal::EncodeIndex::Type encode_type;
   int bitrate;
@@ -43,10 +55,10 @@ struct EncoderSettings {
   }
 
   static EncoderSettings QcamEncoderSettings() {
-    // qcamera.ts is the small "dashcam" copy uploaded to konn3kt. Stock 256kbps @ 526x330 is potato;
-    // bump the bitrate to match the higher resolution below. Still H264/.ts (web/HLS compatible) and
-    // ~1/4 the bitrate of fcamera.hevc, so the file stays small. Override with QCAM_BITRATE if needed.
-    int _qcam_bitrate = getenv("QCAM_BITRATE") ? atoi(getenv("QCAM_BITRATE")) : 1'600'000;
+    // Keep Konn3kt route uploads useful without turning each 60-second qcamera
+    // segment into a 26 MB file. This is still a substantial improvement over
+    // stock qcam, while CBR keeps storage and upload usage predictable.
+    int _qcam_bitrate = getenv("QCAM_BITRATE") ? atoi(getenv("QCAM_BITRATE")) : 2'400'000;
     return EncoderSettings{.encode_type = cereal::EncodeIndex::Type::QCAMERA_H264, .bitrate = _qcam_bitrate, .gop_size = 15};
   }
 
@@ -140,8 +152,8 @@ const EncoderInfo qcam_encoder_info = {
   .filename = "qcamera.ts",
   .cbr = true,           // enforce the bitrate so upload size stays predictable (no VBR overshoot)
   .get_settings = [](int){return EncoderSettings::QcamEncoderSettings();},
-  .frame_width = 1052,   // 2x the stock 526x330, same road-cam aspect ratio
-  .frame_height = 660,
+  .frame_width = is_mici() ? MICI_QCAM_WIDTH : QCAM_WIDTH,
+  .frame_height = is_mici() ? MICI_QCAM_HEIGHT : QCAM_HEIGHT,
   .include_audio = Params().getBool("RecordAudio"),
   INIT_ENCODE_FUNCTIONS(QRoadEncode),
 };

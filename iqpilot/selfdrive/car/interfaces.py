@@ -1,7 +1,7 @@
 """
 Copyright © IQ.Lvbs, apart of Project Teal Lvbs, All Rights Reserved, licensed under https://konn3kt.com/tos
 """
-from opendbc.car import structs as _dbc
+from iqdbc.car import structs as _dbc
 from openpilot.common.params import Params as _Store
 from openpilot.common.swaglog import cloudlog as _log
 from openpilot.selfdrive.controls.lib.latcontrol_torque import get_nn_model_path as _resolve_nn
@@ -12,11 +12,11 @@ _ANGLE = _dbc.CarParams.SteerControlType.angle
 
 # Port tunables surfaced to the fingerprint step, flat so the read is one pass.
 _TUNABLES = (
-  "HyundaiLongitudinalTuning",
-  "SubaruStopAndGo",
-  "SubaruStopAndGoManualParkingBrake",
-  "TeslaCoopSteering",
-  "ToyotaEnforceStockLongitudinal",
+  "IQHyundaiLongTune",
+  "IQSubaruCreepAssist",
+  "IQSubaruCreepAssistManualBrake",
+  "IQTeslaTorqueBlend",
+  "IQToyotaFactoryLong",
   "ToyotaSnGHack",
 )
 
@@ -69,7 +69,7 @@ def _cleanup_unsupported_params(cp, cp_iq, store=None) -> None:
   set_speed_limit_controller_availability(cp, cp_iq, store)
 
 
-def setup_interfaces(ci, store=None) -> None:
+def apply_iq_car_config(ci, store=None) -> None:
   store = store or _Store()
   if _stamp_lateral_model(ci.CP, ci.CP_IQ, store):
     ci.configure_torque_tune(ci.CP.carFingerprint, ci.CP.lateralTuning)

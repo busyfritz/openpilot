@@ -276,7 +276,7 @@ std::string default_dbc_template() {
 DbcEditorSource resolve_dbc_editor_source(const std::string &dbc_name) {
   const fs::path generated_dbc_dir = repo_root() / "tools" / "jotpluggler" / "generated_dbcs";
   const std::array<DbcEditorSource, 2> candidates = {{
-    {.path = repo_root() / "opendbc" / "dbc" / (dbc_name + ".dbc"), .kind = DbcEditorState::SourceKind::Opendbc},
+    {.path = repo_root() / "iqdbc" / "dbc" / (dbc_name + ".dbc"), .kind = DbcEditorState::SourceKind::Opendbc},
     {.path = generated_dbc_dir / (dbc_name + ".dbc"), .kind = DbcEditorState::SourceKind::Generated},
   }};
   for (const DbcEditorSource &candidate : candidates) {
@@ -328,7 +328,7 @@ bool save_dbc_editor_contents(AppSession *session, UiState *state) {
     return false;
   }
   if (editor.source_kind == DbcEditorState::SourceKind::Opendbc && editor.save_name == editor.source_name) {
-    state->error_text = "Save edited opendbc files under a new name";
+    state->error_text = "Save edited iqdbc files under a new name";
     state->open_error_popup = true;
     return false;
   }

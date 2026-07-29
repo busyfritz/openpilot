@@ -2,11 +2,12 @@
 import numpy as np
 from dataclasses import dataclass
 
-from cereal import messaging, car
+from cereal import messaging
 from openpilot.common.constants import CV
 from openpilot.common.realtime import DT_MDL
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
+from openpilot.selfdrive.controls.lib.drive_helpers import should_stop
 
 
 @dataclass
@@ -138,8 +139,8 @@ MANEUVERS = [
 
 def main():
   params = Params()
-  cloudlog.info("joystickd is waiting for CarParams")
-  CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
+  cloudlog.info("maneuversd is waiting for CarParams")
+  params.get("CarParams", block=True)
 
   sm = messaging.SubMaster(['carState', 'carControl', 'controlsState', 'selfdriveState', 'modelV2'], poll='modelV2')
   pm = messaging.PubMaster(['longitudinalPlan', 'iqPlan', 'driverAssistance', 'alertDebug'])
@@ -177,7 +178,7 @@ def main():
     pm.send('alertDebug', alert_msg)
 
     longitudinalPlan.aTarget = accel
-    longitudinalPlan.shouldStop = v_ego < CP.vEgoStopping and accel < 1e-2
+    longitudinalPlan.shouldStop = should_stop(v_ego, accel)
 
     longitudinalPlan.allowBrake = True
     longitudinalPlan.allowThrottle = True

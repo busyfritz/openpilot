@@ -72,7 +72,10 @@ for model_name in ['dmonitoring_model']:
   # inputs (onnx + tinygrad_repo + flags + metadata script) and output hashes; if it matches, skip
   # declaring the targets entirely. Any mismatch falls back to a normal on-device compile.
   if arch == "larch64":
-    from openpilot.selfdrive.modeld.prebuilt_models import verify_prebuilt, outputs_match
+    from openpilot.selfdrive.modeld.prebuilt_models import packaged_prebuilt_matches, verify_prebuilt, outputs_match
+    if packaged_prebuilt_matches(model_name):
+      print(lenv.PrettyNote('SKIP', f"{model_name} — packaged prebuilt pkl"))
+      continue
     if verify_prebuilt(model_name, flags):
       print(lenv.PrettyNote('SKIP', f"{model_name} — prebuilt pkl"))
       continue

@@ -9,12 +9,14 @@ except ImportError:
     pass
 
   class ParamKeyFlag(IntFlag):
-    PERSISTENT = 1
-    CLEAR_ON_MANAGER_START = 2
-    CLEAR_ON_ONROAD_TRANSITION = 4
-    CLEAR_ON_OFFROAD_TRANSITION = 8
-    DONT_LOG = 16
-    DEVELOPMENT_ONLY = 32
+    # must stay in lockstep with enum ParamKeyFlag in common/params.h
+    PERSISTENT = 0x02
+    CLEAR_ON_MANAGER_START = 0x04
+    CLEAR_ON_ONROAD_TRANSITION = 0x08
+    CLEAR_ON_OFFROAD_TRANSITION = 0x10
+    DONT_LOG = 0x20
+    DEVELOPMENT_ONLY = 0x40
+    CLEAR_ON_IGNITION_ON = 0x80
     ALL = 0xFFFFFFFF
 
   class ParamKeyType(IntEnum):
@@ -62,6 +64,14 @@ except ImportError:
       except (FileNotFoundError, NotADirectoryError, IsADirectoryError):
         return False
 
+    def get_int(self, key, block: bool = False) -> int:
+      value = self.get(key, block=block)
+      return int(value) if value else 0
+
+    def get_float(self, key, block: bool = False) -> float:
+      value = self.get(key, block=block)
+      return float(value) if value else 0.0
+
     def put(self, key, dat):
       if isinstance(dat, str):
         dat = dat.encode("utf-8")
@@ -78,11 +88,23 @@ except ImportError:
     def put_bool(self, key, val: bool):
       self.put(key, b"1" if val else b"0")
 
+    def put_int(self, key, val: int):
+      self.put(key, str(val))
+
+    def put_float(self, key, val: float):
+      self.put(key, str(val))
+
     def put_nonblocking(self, key, dat):
       self.put(key, dat)
 
     def put_bool_nonblocking(self, key, val: bool):
       self.put_bool(key, val)
+
+    def put_int_nonblocking(self, key, val: int):
+      self.put_int(key, val)
+
+    def put_float_nonblocking(self, key, val: float):
+      self.put_float(key, val)
 
     def remove(self, key):
       try:

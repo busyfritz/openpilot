@@ -5,7 +5,7 @@ import contextlib
 import random
 from termcolor import cprint
 
-from opendbc.car.structs import CarParams
+from iqdbc.car.structs import CarParams
 from panda import Panda, PandaJungle
 
 NUM_PANDAS_PER_TEST = 1

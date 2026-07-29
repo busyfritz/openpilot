@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from opendbc.car.structs import CarParams
+from iqdbc.car.structs import CarParams
 from panda import Panda
 
 # This script is intended to be used in conjunction with the echo_loopback_test.py test script from panda jungle.

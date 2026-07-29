@@ -6,7 +6,7 @@ import random
 import argparse
 from itertools import permutations
 
-from opendbc.car.structs import CarParams
+from iqdbc.car.structs import CarParams
 from panda import Panda
 
 def get_test_string():

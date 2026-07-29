@@ -67,6 +67,9 @@ class MeteredType(IntEnum):
   NO = 2
 
 
+_WARNED_UNSUPPORTED_NETWORKS: set[tuple[int, int, int]] = set()
+
+
 def get_security_type(flags: int, wpa_flags: int, rsn_flags: int) -> SecurityType:
   wpa_props = wpa_flags | rsn_flags
 
@@ -83,7 +86,10 @@ def get_security_type(flags: int, wpa_flags: int, rsn_flags: int) -> SecurityTyp
     # WPA2, WPA2+WPA3 mixed, or WPA — all handled via WPA key_mgmt (NM negotiates SAE if available)
     return SecurityType.WPA2
   else:
-    cloudlog.warning(f"Unsupported network! flags: {flags}, wpa_flags: {wpa_flags}, rsn_flags: {rsn_flags}")
+    _key = (flags, wpa_flags, rsn_flags)
+    if _key not in _WARNED_UNSUPPORTED_NETWORKS:
+      _WARNED_UNSUPPORTED_NETWORKS.add(_key)
+      cloudlog.warning(f"Unsupported network! flags: {flags}, wpa_flags: {wpa_flags}, rsn_flags: {rsn_flags}")
     return SecurityType.UNSUPPORTED
 
 
@@ -630,6 +636,7 @@ class WifiManager:
           cloudlog.warning("No WiFi device found")
           return
 
+        self._set_device_autoconnect(True)
         self._connecting_to_ssid = ssid
         self._router_main.send(new_method_call(self._nm, 'ActivateConnection', 'ooo',
                                                (conn_path, self._wifi_device, "/")))
@@ -638,6 +645,37 @@ class WifiManager:
       worker()
     else:
       threading.Thread(target=worker, daemon=True).start()
+
+  def disconnect_connection(self, ssid: str, block: bool = False):
+    def worker():
+      if self._router_main is None:
+        cloudlog.warning(f"WiFi not ready while disconnecting {ssid}")
+        return
+
+      if ssid not in self._get_connections():
+        return
+
+      # the profile stays saved and untouched; without clearing autoconnect on the device
+      # NetworkManager re-associates within seconds
+      self._set_device_autoconnect(False)
+      self._connecting_to_ssid = ""
+      self._deactivate_connection(ssid)
+      self._update_networks()
+      self._enqueue_callbacks(self._disconnected)
+
+    if block:
+      worker()
+    else:
+      threading.Thread(target=worker, daemon=True).start()
+
+  def _set_device_autoconnect(self, enabled: bool) -> None:
+    if self._router_main is None or self._wifi_device is None:
+      return
+
+    dev_addr = DBusAddress(self._wifi_device, bus_name=NM, interface=NM_DEVICE_IFACE)
+    reply = self._router_main.send_and_get_reply(Properties(dev_addr).set('Autoconnect', 'b', enabled))
+    if reply.header.message_type == MessageType.error:
+      cloudlog.warning(f'Failed to set device autoconnect={enabled}: {reply}')
 
   def _deactivate_connection(self, ssid: str):
     target_conn_path = self._get_connections().get(ssid, None)
