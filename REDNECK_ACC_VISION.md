@@ -96,7 +96,7 @@ Key files (in `opgm/opendbc` submodule, `opendbc/car/gm/`):
 
 ## 6. VW PQ side today (iqpilot `beta-pq`)
 
-Car code: `opendbc_repo/opendbc/car/volkswagen/`.
+Car code: `iqdbc_repo/iqdbc/car/volkswagen/`.
 - **Detection + flags DONE**: `interface.py` sets `IQ_CC_ONLY` / `IQ_CC_ONLY_NO_RADAR`;
   cc-only safety params set (`PQ_NO_CAM_BUS`, `PQ_LOWLINE`).
 - **Button primitives DONE** (`pqcan.py`):
@@ -121,7 +121,7 @@ Car code: `opendbc_repo/opendbc/car/volkswagen/`.
 4. **HUD/UX**: show set-speed and ACC status appropriately; low-speed / take-over alerts.
 
 ### Panda safety — RESOLVED via investigation
-`opendbc/safety/modes/volkswagen_pq.h`: `GRA_Neu` (0x38A) is already in the long-config
+`iqdbc/safety/modes/volkswagen_pq.h`: `GRA_Neu` (0x38A) is already in the long-config
 TX allowlist on bus 1/2. The tx hook only blocks `GRA_Neu_Setzen` (bit16) and `GRA_Recall`
 (bit17) when `!controls_allowed`; it does NOT restrict `GRA_Down_kurz` (bit10) or
 `GRA_Up_kurz` (bit11). So up/down button spam is already permitted once the long config is
