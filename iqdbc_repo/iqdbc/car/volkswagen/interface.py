@@ -2,6 +2,7 @@ import time
 
 from iqdbc.car import get_safety_config, structs, uds
 from iqdbc.car.carlog import carlog
+from iqdbc.car.common.conversions import Conversions as CV
 from iqdbc.car.interfaces import CarInterfaceBase
 from iqdbc.car.isotp_parallel_query import IsoTpParallelQuery
 from iqdbc.car.volkswagen.carcontroller import CarController
