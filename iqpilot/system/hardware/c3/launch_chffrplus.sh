@@ -10,7 +10,7 @@ function agnos_version_allowed {
   local expected_version="$2"
   local compat_version
 
-  if [ "$current_version" = "$expected_version" ] || [[ "$current_version" = "$expected_version"-* ]]; then
+  if [ "$current_version" = "$expected_version" ] || [[ "$current_version" = "$expected_version"-* ]] || [[ "$current_version" = "$expected_version".* ]]; then
     return 0
   fi
 

@@ -48,11 +48,19 @@ def agnos_manifest_path(install_path: str, device_type: str) -> str:
   return os.path.join(install_path, "system", "hardware", "tici", fname)
 
 
+def agnos_version_allowed(current_version: str, expected_version: str, compat_versions: list[str] | None = None) -> bool:
+  if current_version == expected_version or \
+     current_version.startswith(f"{expected_version}-") or \
+     current_version.startswith(f"{expected_version}."):
+    return True
+  return current_version in (compat_versions or [])
+
+
 def os_update_needed(install_path: str) -> tuple[bool, str, str]:
   """Returns (needed, current, required)."""
   current = current_os_version()
   required = required_agnos_version(install_path)
-  needed = bool(required and current and required != current)
+  needed = bool(required and current and not agnos_version_allowed(current, required))
   return needed, current, required
 
 

@@ -17,6 +17,7 @@ from openpilot.common.markdown import parse_markdown
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.system.hardware import AGNOS, HARDWARE
+from openpilot.system.ui.lib.os_update import agnos_version_allowed
 from openpilot.system.version import get_build_metadata, IQ_BRANCH_MIGRATIONS
 
 
@@ -111,12 +112,6 @@ def get_agnos_target_versions(launch_env_dir: str) -> tuple[str, list[str]]:
   compat_versions = [v.strip() for v in (lines[1] if len(lines) > 1 else "").split(",") if v.strip()]
   return expected_version, compat_versions
 
-
-def agnos_version_allowed(current_version: str, expected_version: str, compat_versions: list[str]) -> bool:
-  if current_version == expected_version or current_version.startswith(f"{expected_version}-"):
-    return True
-
-  return current_version in compat_versions
 
 def configure_git_auth(cwd: str) -> None:
   """Install the IQ.Lvbs read-only git credential helper before any remote op.
